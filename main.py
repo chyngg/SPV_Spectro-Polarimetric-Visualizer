@@ -1,6 +1,5 @@
 import dearpygui.dearpygui as dpg
 import dearpygui_extend as dpge
-from file_dialog.fdialog import FileDialog
 from subs import *
 import numpy as np
 
@@ -10,8 +9,6 @@ wavelength_options = ["R", "G", "B"]
 graph_options = ["s0", "s1", "s2", "s3", "DoLP", "AoLP", "DoCP", "CoP"]
 
 dpg.create_context()
-fd = FileDialog(callback=file_selected_callback, show_dir_size=False, modal=False, allow_drag=False,
-					default_path="..")
 
 setup_fonts()
 layout= ('\n'
@@ -48,7 +45,7 @@ with dpg.theme() as status_theme:
 # LEFT MENU
 with dpg.group(parent='left_menu', indent=5) as left_menu:
 	dpg.add_text('MENU:')
-	dpg.add_button(label="Upload .npy File", callback=fd.show_file_dialog, tag="upload_file_button", width=-1)
+	dpg.add_button(label="Upload .npy File", callback=open_import_dialog, tag="upload_file_button", width=-1)
 	dpg.add_button(label="Export image", callback=open_export_dialog, tag="export_image_button", width=-1)
 
 	dpg.add_spacer(height=30)

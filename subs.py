@@ -171,27 +171,28 @@ def change_direction(app_data):
 	selected_direction = app_data
 	show_stokes_histogram(parameter=shown_histogram, direction=selected_direction)
 
-def file_selected_callback(selected_files):
-	global selected_file_name
-	if not selected_files:
-		return
-	selected_file_path = selected_files[0]
-	selected_file_name = os.path.basename(selected_file_path)
+def open_import_dialog():
+	with dpg.file_dialog(directory_selector=False, show=True, callback=file_selected_callback,
+						 tag="import_dialog_id", width=800, height=400):
+		dpg.add_file_extension(".npy", color=(0, 200, 255, 255))
 
+def file_selected_callback(sender, app_data):
+	global selected_file_path, selected_file_name
+	selected_file_path = app_data['file_path_name']
+	selected_file_name = os.path.basename(selected_file_path)
+	print(f"File selected: {selected_file_path}")
 	load_npy_and_display(selected_file_path)
+	dpg.delete_item("import_dialog_id")
 
 def open_export_dialog():
 	with dpg.file_dialog(directory_selector=False, show=True, callback=export_image_callback, tag="export_dialog_id", width=800, height=400):
 		dpg.add_file_extension(".png", color=(0, 200, 0, 255))
 
 def export_image_callback(app_data):
-	global last_figure
-	save_path = app_data['file_path_name']
+	global last_figure, selected_file_name
+	save_path = app_data
 	if last_figure:
 		last_figure.savefig(save_path, dpi=300, bbox_inches='tight')
-		print(f"Image saved to {save_path}")
-	else:
-		print("No image to save.")
 
 def load_npy_and_display(file_path=None):
 	global npy_data, current_tab
@@ -622,10 +623,10 @@ def update_visualization(option):
 	selected_option = option
 	dpg.configure_item("polarimetric_options", enabled=False)
 	dpg.configure_item("wavelength_options", enabled=False)
-	# 선택한 옵션에 맞는 시각화 함수 실행
+
 	if option in visualization_functions:
 		visualizing_by_wavelength = False
-		visualization_functions[option]()  # 해당 함수 실행
+		visualization_functions[option]()
 	else:
 		print(f"Invalid option: {option}")
 
