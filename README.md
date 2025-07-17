@@ -4,9 +4,10 @@
 
 [[Project Page]](https://eschoi.com/SPDataset/) [[Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
 
-![RGB_1.png](/example/RGB_1.png)
-
-![Hyperspectral_1.png](/example/Hyperspectral_1.png)
+<p align="center">
+  <img src="/example/RGB_1.png" alt="RGB Image" width="45%" />
+  <img src="/example/Hyperspectral_1.png" alt="Hyperspectral Image" width="45%" />
+</p>
 
 ## Requirements
 
