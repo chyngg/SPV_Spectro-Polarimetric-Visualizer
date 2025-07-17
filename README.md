@@ -1,8 +1,7 @@
 # Visualization Interface for Spectral-Polarimetric datasets
 
----
 
-[[Project Page]](https://eschoi.com/SPDataset/) [[Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
+[[Spectral-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
 
 <p align="center">
   <img src="/example/RGB_1.png" alt="RGB Image" width="45%" />
