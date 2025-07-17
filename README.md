@@ -10,7 +10,6 @@
 
 ## Requirements
 
----
 
 To run this GUI application for Spectral-Polarimetric data visualization, the following Python packages must be installed.
 
@@ -40,7 +39,6 @@ python main.py
 
 ## Features
 
----
 
 - Visualize for entire wavelengths:
     - Full Stokes parameters (`s0`, `s1`, `s2` , `s3`)
