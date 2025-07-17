@@ -1,4 +1,3 @@
-import dearpygui.dearpygui as dpg
 import dearpygui_extend as dpge
 from subs import *
 import numpy as np

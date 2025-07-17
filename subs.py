@@ -8,6 +8,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import scipy.io as spio
 from scipy.interpolate import PchipInterpolator
 from bisect import bisect
+from matplotlib.patches import Rectangle
 
 npy_data = None
 selected_file_name = None
@@ -30,6 +31,7 @@ upper_left_y = 0
 lower_right_x = 0
 lower_right_y = 0
 visualizing_by_wavelength = False
+show_rectangle_overlay = False
 
 def activate_visualization():
 	global selected_wavelength, selected_stokes
@@ -101,6 +103,11 @@ def select_option_callback():
 def graph_option_callback():
 	global graph_option
 	graph_option = dpg.get_value("graph_options")
+
+def on_close_graph_window():
+	global show_rectangle_overlay
+	show_rectangle_overlay = False
+	update_visualization(selected_option)
 
 def on_upper_left_x():
 	global upper_left_x
@@ -293,6 +300,8 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	generate_texture(selected_data, f"{selected_stokes} - {selected_wavelengths} channel", cmap, vmin_, vmax_)
 
 def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_original=False):
+	global lower_right_x, lower_right_y, upper_left_x, upper_left_y
+	h, w = npy_data.shape[:2]
 	if is_original:
 		display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
 
@@ -305,11 +314,50 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 
 	fig, ax = plt.subplots(figsize=(7.6, 5.4))
 	if is_original:
-		img = ax.imshow(display_image)  # cmap 없이 원본 색상 출력
+		img = ax.imshow(display_image)
 	else:
 		img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
-	ax.axis("off")
+
+	if show_rectangle_overlay and (lower_right_x > upper_left_x) and (lower_right_y > upper_left_y):
+		try:
+			x_scale = 760 / w
+			y_scale = 540 / h
+
+			rect_x = upper_left_x * x_scale
+			rect_y = (h - lower_right_y) * y_scale
+			rect_w = (lower_right_x - upper_left_x) * x_scale
+			rect_h = (lower_right_y - upper_left_y) * y_scale
+
+			# Rectangle(left, bottom), width, height
+			rect = Rectangle(
+				(rect_x, rect_y), rect_w, rect_h,
+				linewidth=1.5,
+				edgecolor='gray',
+				facecolor='gray',
+				alpha=0.3
+			)
+			ax.add_patch(rect)
+		except Exception as e:
+			print(f"[WARN] Rectangle drawing failed: {e}")
+
+	ax.axis("on")
 	ax.set_title(title)
+
+	try:
+		tick_x = np.linspace(0, 760, 5)
+		tick_y = np.linspace(0, 540, 5)
+		label_x = [f"{int(w * x / 760)}" for x in tick_x]
+		label_y = [f"{int(h * (1 - y / 540))}" for y in tick_y]  # 아래가 0
+
+		ax.set_xticks(tick_x)
+		ax.set_yticks(tick_y)
+		ax.set_xticklabels(label_x)
+		ax.set_yticklabels(label_y)
+		ax.tick_params(labelsize=8)
+		ax.set_xlabel("X", fontsize=10)
+		ax.set_ylabel("Y", fontsize=10)
+	except:
+		pass
 
 	if not is_original:
 		cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.05, pad=0.02)
@@ -631,12 +679,13 @@ def update_visualization(option):
 		print(f"Invalid option: {option}")
 
 def view_graph():
-	global npy_data, upper_left_x, upper_left_y, lower_right_x, lower_right_y, graph_option
+	global npy_data, upper_left_x, upper_left_y, lower_right_x, lower_right_y, graph_option, show_rectangle_overlay
 
 	if npy_data is None:
 		return
 
 	try:
+		show_rectangle_overlay = True
 		x1, x2 = sorted([int(upper_left_x), int(lower_right_x)])
 		y1, y2 = sorted([int(upper_left_y), int(lower_right_y)])
 		height, width = npy_data.shape[:2]
@@ -661,8 +710,8 @@ def view_graph():
 		s2_crop = normalize(s2_crop)
 		s3_crop = normalize(s3_crop)
 
-		dolp_crop = np.sqrt(s1_crop**2 + s2_crop**2) / s0_crop
-		aolp_crop = 0.5 * np.arctan2(s2_crop, s1_crop)
+		dolp_crop = np.sqrt(s1_crop**2 + s2_crop**2) /np.maximum(s0_crop, 1e-6)
+		aolp_crop = 0.5 * np.arctan2(s2_crop, np.maximum(s1_crop, 1e-6))
 		docp_crop = np.abs(s3_crop) / np.maximum(s0_crop, 1e-6)
 		cop_crop = 0.5 * np.arctan2(s3_crop, np.sqrt(s1_crop**2 + s2_crop**2))
 		data_map = {
@@ -702,7 +751,7 @@ def view_graph():
 			image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(
 				canvas.get_width_height()[::-1] + (4,))
 			image_array = image_array.astype(np.float32) / 255.0
-			plt.close(fig)
+			update_visualization(selected_option)
 
 			if not dpg.does_item_exist("graph_texture"):
 				with dpg.texture_registry(show=False):
@@ -712,7 +761,7 @@ def view_graph():
 				dpg.set_value("graph_texture", image_array.flatten())
 
 			if not dpg.does_item_exist("graph_window"):
-				with dpg.window(label="Graph Window", tag="graph_window", width=700, height=500, pos=(100, 100)):
+				with dpg.window(label="Graph Window", tag="graph_window", width=700, height=500, pos=(100, 100), on_close=on_close_graph_window):
 					dpg.add_image("graph_texture")
 			else:
 				dpg.configure_item("graph_window", show=True)
@@ -721,15 +770,12 @@ def view_graph():
 			print("Unsupported data format.")
 			return
 
-		plt.show()
-
 	except Exception as e:
 		print(f"[ERROR] Failed to plot region summary: {e}")
 
-
 def HSI2RGB(wY, stokes_data, ydim, xdim, d, threshold):
 	# Load reference illuminant
-	D = spio.loadmat('C:/2024 Winter Internship/SP_data_visualization/D_illuminants.mat')
+	D = spio.loadmat('./D_illuminants.mat')
 	w = D['wxyz'][:, 0]
 	x = D['wxyz'][:, 1]
 	y = D['wxyz'][:, 2]
