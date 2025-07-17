@@ -33,7 +33,6 @@ If you are on **macOS or Linux**, update the font path in `setup_fonts()` in `su
 
 ## How to Run
 
----
 
 ```bash
 python main.py
