@@ -1,0 +1,26 @@
+npy_data = None
+selected_file_name = None
+last_figure = None
+current_tab = "Trichromatic"
+selected_option = "original"
+selected_direction = "X"
+selectable_wavelengths = ["R", "G", "B"]
+selected_wavelength = "R"
+selected_stokes = "s0"
+graph_option = "s0"
+shown_histogram = 1
+vmax = 0
+vmin = 0
+temp_abs_vmax = 0
+input_vmax = 0
+input_vmin = 0
+upper_left_x = 0
+upper_left_y = 0
+lower_right_x = 0
+lower_right_y = 0
+visualizing_by_wavelength = False
+show_rectangle_overlay = False
+
+selectable_options = ["s0", "s1", "s2", "s3", "DoLP", "AoLP", "DoCP", "CoP", "Unpolarized", "Polarized(Linear)", "Polarized(Circular)", "Polarized(total)"]
+wavelength_options = ["R", "G", "B"]
+graph_options = ["s0", "s1", "s2", "s3", "DoLP", "AoLP", "DoCP", "CoP"]
