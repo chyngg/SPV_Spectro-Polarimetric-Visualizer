@@ -3,7 +3,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 def setup_fonts():
 	with dpg.font_registry():
-		dpg.add_font("C:/Windows/Fonts/arial.ttf", 18, tag="default_font")
+		dpg.add_font("assets/fonts/FreeSansBold.ttf", 18, tag="default_font")
 	dpg.bind_font("default_font")
 
 def make_custom_seismic():

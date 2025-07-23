@@ -17,19 +17,6 @@ pip install dearpygui dearpygui-extend matplotlib numpy opencv-python scipy
 python main.py
 ```
 
-### Additional Requirements
-
-This application loads Arial font from the Windows default path:
-
-```jsx
-C:/Windows/Fonts/arial.ttf
-```
-
-If you are on **macOS or Linux**, update the font path in `setup_fonts()` in `subs.py` to a valid path on your system:
-
-- macOS: `/System/Library/Fonts/SFNS.ttf`
-- Ubuntu: `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`
-
 ## Features
 
 
