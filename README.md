@@ -1,4 +1,4 @@
-# Visualization Interface for Spectral-Polarimetric datasets
+# SPV: Spectro-Polarimetric Visualizer
 
 
 [[Spectral-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
@@ -8,13 +8,13 @@
   <img src="/example/Hyperspectral_1.png" alt="Hyperspectral Image" width="45%" />
 </p>
 
-## Requirements
-
-
-To run this GUI application for Spectral-Polarimetric data visualization, the following Python packages must be installed.
+## Installation & Running the code
 
 ```bash
+git clone https://github.com/chyngg/SPV_Spectro-Polarimetric-Visualizer.git
+cd SPV_Spectro-Polarimetric-Visualizer
 pip install dearpygui dearpygui-extend matplotlib numpy opencv-python scipy
+python main.py
 ```
 
 ### Additional Requirements
@@ -30,18 +30,11 @@ If you are on **macOS or Linux**, update the font path in `setup_fonts()` in `su
 - macOS: `/System/Library/Fonts/SFNS.ttf`
 - Ubuntu: `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`
 
-## How to Run
-
-
-```bash
-python main.py
-```
-
 ## Features
 
 
 - Visualize for entire wavelengths:
-    - Full Stokes parameters (`s0`, `s1`, `s2` , `s3`)
+    - Full Stokes parameters (`$s_0$`, `$s_1$`, `$s_2$` , `$s_3$`)
     - Polarization feature maps (`DoLP`, `AoLP`, `DoCP`, `CoP`)
     - Unpolarized/Polarized light
     - Histogram visualization
