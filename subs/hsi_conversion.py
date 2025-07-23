@@ -5,7 +5,7 @@ import numpy as np
 
 def HSI2RGB(wY, stokes_data, d, threshold):
 	# Load reference illuminant
-	D = spio.loadmat('./D_illuminants.mat')
+	D = spio.loadmat('assets/illuminant_file/D_illuminants.mat')
 	w = D['wxyz'][:, 0]
 	x = D['wxyz'][:, 1]
 	y = D['wxyz'][:, 2]
