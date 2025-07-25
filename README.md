@@ -4,8 +4,8 @@
 [[Spectral-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
 
 <p align="center">
-  <img src="/example/RGB_1.png" alt="RGB Image" width="45%" />
-  <img src="/example/Hyperspectral_1.png" alt="Hyperspectral Image" width="45%" />
+  <img src="/assets/readme/RGB_1.png" alt="RGB Image" width="45%" />
+  <img src="/assets/readme/Hyperspectral_1.png" alt="Hyperspectral Image" width="45%" />
 </p>
 
 ## Installation & Running the code
@@ -21,7 +21,7 @@ python main.py
 
 
 - Visualize for entire wavelengths:
-    - Full Stokes parameters (`$s_0$`, `$s_1$`, `$s_2$` , `$s_3$`)
+    - Full Stokes parameters (`s0`, `s1`, `s2` , `s3`)
     - Polarization feature maps (`DoLP`, `AoLP`, `DoCP`, `CoP`)
     - Unpolarized/Polarized light
     - Histogram visualization
