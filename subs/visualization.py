@@ -2,11 +2,13 @@ from . import state
 import dearpygui.dearpygui as dpg
 import numpy as np
 import cv2
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.patches import Rectangle
 from .hsi_conversion import HSI2RGB
 from .themes import make_custom_seismic
+matplotlib.use('Agg')
 
 def check_valid_by_wavelength(visualizing):
 	if state.vmax <= state.vmin:

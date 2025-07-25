@@ -1,6 +1,6 @@
 import dearpygui_extend as dpge
 import dearpygui.dearpygui as dpg
-from sub_functions import *
+from subs import *
 import numpy as np
 
 dpg.create_context()
