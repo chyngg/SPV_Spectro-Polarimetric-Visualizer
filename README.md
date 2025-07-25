@@ -1,13 +1,14 @@
 # SPV: Spectro-Polarimetric Visualizer
 
 
-[[Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
-Download Spectro-Polarimetric data from the link above.
-
 <p align="center">
   <img src="/assets/readme/RGB_1.png" alt="RGB Image" width="45%" />
   <img src="/assets/readme/Hyperspectral_1.png" alt="Hyperspectral Image" width="45%" />
 </p>
+
+[[Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
+
+Download Spectro-Polarimetric data from the link above.
 
 ## Installation & Running the code
 
