@@ -1,15 +1,14 @@
 # SPV: Spectro-Polarimetric Visualizer
 
+[[Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
 
 <p align="center">
   <img src="/assets/readme/RGB_1.png" alt="RGB Image" width="45%" />
   <img src="/assets/readme/Hyperspectral_1.png" alt="Hyperspectral Image" width="45%" />
 </p>
 
-[[Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
-Download Spectro-Polarimetric data from the link above.
 
-## Installation & Running the code
+## Installation & Running
 
 ```bash
 git clone https://github.com/chyngg/SPV_Spectro-Polarimetric-Visualizer.git
@@ -17,7 +16,6 @@ cd SPV_Spectro-Polarimetric-Visualizer
 pip install dearpygui dearpygui-extend matplotlib numpy opencv-python scipy
 python main.py
 ```
-Select a `.npy` file to view the visualization.
 
 ## Features
 
