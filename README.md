@@ -9,7 +9,7 @@
 
 
 ## Installation & Running
-
+You must have at least _Python 3.10_ before running code below.
 ```bash
 git clone https://github.com/chyngg/SPV_Spectro-Polarimetric-Visualizer.git
 cd SPV_Spectro-Polarimetric-Visualizer
