@@ -7,7 +7,6 @@
 </p>
 
 [[Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
-
 Download Spectro-Polarimetric data from the link above.
 
 ## Installation & Running the code
