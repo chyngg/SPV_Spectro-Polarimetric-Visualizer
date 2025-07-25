@@ -5,16 +5,24 @@ from . import state
 from .visualization import update_visualization
 
 def open_import_dialog():
-	print("OPENING")
+	if dpg.does_item_exist("import_dialog_id"):
+		dpg.delete_item("import_dialog_id")
+
 	with dpg.file_dialog(directory_selector=False, show=True, callback=file_selected_callback,
 						 tag="import_dialog_id", width=800, height=400):
 		dpg.add_file_extension(".npy", color=(0, 200, 255, 255))
 
 def file_selected_callback(sender, app_data):
+	if not app_data or 'file_path_name' not in app_data:
+		dpg.delete_item("import_dialog_id")
+		return
+
 	selected_file_path = app_data['file_path_name']
 	state.selected_file_name = os.path.basename(selected_file_path)
 	load_npy_and_display(selected_file_path)
-	dpg.delete_item("import_dialog_id")
+
+	if dpg.does_item_exist("import_dialog_id"):
+		dpg.delete_item("import_dialog_id")
 
 def open_export_dialog():
 	with dpg.file_dialog(directory_selector=False, show=True, callback=export_image_callback, tag="export_dialog_id", width=800, height=400):
