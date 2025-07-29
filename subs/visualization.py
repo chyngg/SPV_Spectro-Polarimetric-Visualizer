@@ -146,9 +146,9 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 			# Rectangle(left, bottom), width, height
 			rect = Rectangle(
 				(rect_x, rect_y), rect_w, rect_h,
-				linewidth=1.5,
-				edgecolor='gray',
-				facecolor='gray',
+				linewidth=2.0,
+				edgecolor='red',
+				facecolor='red',
 				alpha=0.3
 			)
 			ax.add_patch(rect)
