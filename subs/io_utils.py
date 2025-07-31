@@ -1,8 +1,11 @@
 import dearpygui.dearpygui as dpg
 import numpy as np
 import os
+import sqlite3
 from subs import state
 from .visualization import update_visualization
+from .graph import show_combined_graph
+from .callbacks import multi_graph_option_callback
 
 def open_import_dialog():
 	if dpg.does_item_exist("import_dialog_id"):
@@ -18,6 +21,7 @@ def file_selected_callback(sender, app_data):
 		return
 
 	selected_file_path = app_data['file_path_name']
+	add_file_to_history(selected_file_path)
 	state.selected_file_name = os.path.basename(selected_file_path)
 	load_npy_with_history(selected_file_path)
 
@@ -72,19 +76,58 @@ def load_npy_with_history(file_path):
 
 	state.recent_files = [fp for fp in state.recent_files if fp != file_path]
 	state.recent_files.insert(0, file_path)
-	state.recent_files = state.recent_files[:10]
+	state.recent_files = get_recent_files(30)
 	load_npy_and_display(file_path)
-	update_history_buttons()
+	update_history_checkboxes()
 
-def update_history_buttons():
+def update_history_checkboxes():
 	dpg.delete_item("history_group", children_only=True)
+
 	for specific_file_path in state.recent_files:
 		filename = os.path.basename(specific_file_path)
-		dpg.add_button(
+		dpg.add_checkbox(
 			label=filename,
 			parent="history_group",
-			callback=make_history_callback(specific_file_path)
+			callback=make_checkbox_callback(specific_file_path)
 		)
 
-def make_history_callback(file_path):
-	return lambda sender, app_data: load_npy_and_display(file_path)
+	dpg.add_button(label="Load Single File", callback=load_file_callback, parent="history_group", width=-1)
+	dpg.add_separator(parent="history_group")
+	dpg.add_button(label="Show graph for Selected Files", callback=show_combined_graph, parent="history_group", width=-1)
+	dpg.add_combo(items=state.graph_options, parent="history_group", default_value="s0", tag="multi_graph_options",
+				  callback=multi_graph_option_callback, width=-1)
+
+def load_file_callback():
+	if len(state.checked_files) != 1:
+		return
+	load_npy_and_display(state.checked_files[0])
+
+def make_checkbox_callback(file_path):
+	return lambda s, a: checkbox_callback(s, a, file_path)
+
+def checkbox_callback(sender, app_data, file_path):
+	if app_data:
+		if file_path not in state.checked_files:
+			state.checked_files.append(file_path)
+	else:
+		if file_path in state.checked_files:
+			state.checked_files.remove(file_path)
+
+def add_file_to_history(file_path):
+	conn = sqlite3.connect("history.db")
+	c = conn.cursor()
+	c.execute("""
+	        INSERT OR REPLACE INTO file_history (path, timestamp) VALUES (?, CURRENT_TIMESTAMP)
+	    """, (file_path,))
+	conn.commit()
+	conn.close()
+
+def get_recent_files(limit=30):
+	conn = sqlite3.connect("history.db")
+	c = conn.cursor()
+	c.execute("""
+		SELECT path FROM file_history ORDER BY timestamp DESC LIMIT ?
+	""", (limit,))
+	files = [row[0] for row in c.fetchall()]
+	conn.close()
+	return files

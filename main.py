@@ -4,6 +4,7 @@ from subs import *
 import numpy as np
 
 dpg.create_context()
+history_db.init_history_db()
 
 themes.setup_fonts()
 layout= ('\n'
@@ -113,8 +114,8 @@ with dpg.group(parent='nodes_cat_A', indent=20) as ndo_cat_A:
 		dpg.add_input_text(tag="lower_right_y", callback=callbacks.on_lower_right_y, width=70)
 	dpg.add_separator()
 	dpg.add_text("Select graph option:")
-	dpg.add_combo(items=state.graph_options, default_value="s0", tag="graph_options",
-				  callback=callbacks.graph_option_callback, width=-1)
+	dpg.add_combo(items=state.graph_options, default_value="s0", tag="crop_graph_options",
+				  callback=callbacks.crop_graph_option_callback, width=-1)
 	dpg.add_separator()
 	dpg.add_button(label="View Graph", callback=lambda: graph.view_graph(), width=-1)
 

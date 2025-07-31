@@ -6,6 +6,7 @@ from . import graph
 from . import io_utils
 from . import hsi_conversion
 from . import themes
+from . import history_db
 
 __all__ = [
     "callbacks",
@@ -15,5 +16,6 @@ __all__ = [
     "graph",
     "io_utils",
     "hsi_conversion",
-    "themes"
+    "themes",
+    "history_db"
 ]

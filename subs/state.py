@@ -1,6 +1,7 @@
 npy_data = None
 selected_file_name = None
 recent_files = []
+checked_files = []
 last_figure = None
 current_tab = "Trichromatic"
 selected_option = "original"
@@ -8,7 +9,8 @@ selected_direction = "X"
 selectable_wavelengths = ["R", "G", "B"]
 selected_wavelength = "R"
 selected_stokes = "s0"
-graph_option = "s0"
+crop_graph_option = "s0"
+multi_graph_option = "s0"
 shown_histogram = 1
 vmax = 0
 vmin = 0

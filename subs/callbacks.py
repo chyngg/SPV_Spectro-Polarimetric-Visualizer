@@ -42,8 +42,11 @@ def reset_visualization():
 		(state.vmin, state.vmax) = (-state.temp_abs_vmax, state.temp_abs_vmax)
 	update_visualization(state.selected_option)
 
-def graph_option_callback():
-	state.graph_option = dpg.get_value("graph_options")
+def crop_graph_option_callback():
+	state.crop_graph_option = dpg.get_value("crop_graph_options")
+
+def multi_graph_option_callback():
+	state.multi_graph_option = dpg.get_value("multi_graph_options")
 
 def on_close_graph_window():
 	state.show_rectangle_overlay = False
@@ -87,3 +90,4 @@ def on_vmin_change():
 		state.input_vmin = vmin_
 	except ValueError:
 		state.vmin = 0
+

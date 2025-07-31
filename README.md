@@ -33,11 +33,8 @@ python main.py
     - Full Stokes parameters (`s0`, `s1`, `s2` , `s3`)
     - Polarization feature maps (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - RGB approximation from hyperspectral data
-- Region-based graph plotting accross wavelengths
+- Region-based graph plotting across wavelengths
     - Stokes parameters (`s0`, `s1`, `s2` , `s3`)
     - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
+- Graph plotting for multiple `.npy` files
 - Save the visualization as `.png`
-
-## To-do
-
-- Support visualization feature statistics for multiple loaded `.npy` files

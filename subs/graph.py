@@ -4,6 +4,7 @@ from .callbacks import on_close_graph_window
 import numpy as np
 import matplotlib.pyplot as plt
 import dearpygui.dearpygui as dpg
+import os
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 def view_graph():
@@ -23,13 +24,6 @@ def view_graph():
 		s1_crop = state.npy_data[y1:y2, x1:x2, 1, :]  # s0
 		s2_crop = state.npy_data[y1:y2, x1:x2, 2, :]  # s0
 		s3_crop = state.npy_data[y1:y2, x1:x2, 3, :]  # s0
-
-		def normalize(x):
-			min_val = np.min(x)
-			max_val = np.max(x)
-			if max_val - min_val == 0:
-				return np.zeros_like(x)
-			return (x - min_val) / (max_val - min_val)
 
 		s0_crop = normalize(s0_crop)
 		s1_crop = normalize(s1_crop)
@@ -52,7 +46,7 @@ def view_graph():
 		}
 
 		if state.npy_data.ndim == 4 and state.npy_data.shape[2] == 4:
-			selected_crop = data_map.get(state.graph_option)
+			selected_crop = data_map.get(state.crop_graph_option)
 			mean_values = np.mean(selected_crop, axis=(0, 1))
 
 			band_count = state.npy_data.shape[3]
@@ -68,8 +62,8 @@ def view_graph():
 				ax.set_xlabel("Channel")
 				ax.bar(rgb_labels, mean_values, color=["blue", "green", "red"])
 
-			ax.set_title(f"Mean {state.graph_option} across wavelengths")
-			ax.set_ylabel(f"Mean {state.graph_option}")
+			ax.set_title(f"Mean {state.crop_graph_option} across wavelengths")
+			ax.set_ylabel(f"Mean {state.crop_graph_option}")
 			ax.grid(True)
 
 			canvas = FigureCanvas(fig)
@@ -102,3 +96,99 @@ def view_graph():
 
 	finally:
 		plt.close()
+
+def show_combined_graph():
+	if not state.checked_files:
+		print("[INFO] No files selected.")
+		return
+
+	try:
+		fig, ax = plt.subplots()
+
+		for file_path in state.checked_files:
+			npy_data = np.load(file_path)
+
+			if npy_data.ndim != 4 or npy_data.shape[2] != 4:
+				print(f"[WARNING] Skipping {file_path}: unexpected shape {npy_data.shape}")
+				continue
+
+			s0 = normalize(npy_data[:, :, 0, :])
+			s1 = normalize(npy_data[:, :, 1, :])
+			s2 = normalize(npy_data[:, :, 2, :])
+			s3 = normalize(npy_data[:, :, 3, :])
+
+			dolp = np.sqrt(s1 ** 2 + s2 ** 2) / np.maximum(s0, 1e-6)
+			aolp = 0.5 * np.arctan2(s2, np.maximum(s1, 1e-6))
+			docp = np.abs(s3) / np.maximum(s0, 1e-6)
+			cop = 0.5 * np.arctan2(s3, np.sqrt(s1**2 + s2**2))
+
+			data_map = {
+				"s0": s0,
+				"s1": s1,
+				"s2": s2,
+				"s3": s3,
+				"DoLP": dolp,
+				"AoLP": aolp,
+				"DoCP": docp,
+				"CoP": cop
+			}
+
+			selected_data = data_map.get(state.multi_graph_option)
+			if selected_data is None:
+				print(f"[WARNING] Unknown graph option: {state.multi_graph_option}")
+				continue
+
+			mean_values = np.mean(selected_data, axis=(0, 1))
+
+			band_count = npy_data.shape[3]
+			filename = os.path.basename(file_path)
+			if band_count == 21:
+				wavelengths = np.arange(450, 651, 10)
+				ax.plot(wavelengths, mean_values, marker='o', label=filename)
+			elif band_count == 3:
+				rgb_labels = ["Blue (460nm)", "Green (540nm)", "Red (620nm)"]
+				ax.bar(rgb_labels, mean_values, alpha=0.5, label=filename)
+
+		ax.set_title(f"Mean {state.multi_graph_option} for Selected Files")
+		ax.set_xlabel("Wavelength (nm)" if band_count == 21 else "Channel")
+		ax.set_ylabel(f"Mean {state.multi_graph_option}")
+		ax.legend()
+		ax.grid(True)
+
+		canvas = FigureCanvas(fig)
+		canvas.draw()
+		image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(
+			canvas.get_width_height()[::-1] + (4,)
+		)
+		image_array = image_array.astype(np.float32) / 255.0
+
+		if not dpg.does_item_exist("graph_texture"):
+			with dpg.texture_registry(show=False):
+				dpg.add_dynamic_texture(width=image_array.shape[1], height=image_array.shape[0],
+										default_value=image_array.flatten(), tag="graph_texture")
+		else:
+			dpg.set_value("graph_texture", image_array.flatten())
+
+		if not dpg.does_item_exist("graph_window"):
+			with dpg.window(label="Graph Window", tag="graph_window", width=700, height=500, pos=(100, 100),
+							on_close=on_close_graph_window):
+				dpg.add_image("graph_texture")
+		else:
+			dpg.configure_item("graph_window", show=True)
+
+	except Exception as e:
+		print(f"[ERROR] Failed to show combined graph: {e}")
+
+	finally:
+		plt.close()
+
+
+def normalize(x):
+	if x.size == 0:
+		return np.zeros_like(x)
+
+	min_val = np.min(x)
+	max_val = np.max(x)
+	if max_val - min_val == 0:
+		return np.zeros_like(x)
+	return (x - min_val) / (max_val - min_val)
