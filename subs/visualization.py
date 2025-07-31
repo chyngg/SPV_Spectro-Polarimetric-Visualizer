@@ -9,6 +9,7 @@ from matplotlib.patches import Rectangle
 from .hsi_conversion import HSI2RGB
 from .themes import make_custom_seismic
 matplotlib.use('Agg')
+wavelengths = np.arange(450, 651, 10)
 
 def check_valid_by_wavelength(visualizing):
 	if state.vmax <= state.vmin:
@@ -198,8 +199,8 @@ def visualize_original():
 	return generate_texture(original_image, "Original Image (sRGB)", "gray", vmin=0, vmax=1, is_original=True)
 
 def visualize_hyper_rgb():
-	wavelengths = np.arange(450, 651, 10)  # 21개
-	rgb_image = HSI2RGB(wavelengths, state.npy_data, d=65, threshold=0.02)
+	s0 = state.npy_data[:, :, 0, :]
+	rgb_image = HSI2RGB(wavelengths, s0, d=65, threshold=0.02)
 	return generate_texture(rgb_image, "RGB Approximation from Hyperspectral", is_original=True)
 
 def visualize_s0():
@@ -291,28 +292,41 @@ def visualize_unpolarized():
 	s1 = state.npy_data[:, :, 1, :]
 	s3 = state.npy_data[:, :, 3, :]
 	unpolarized = s0 - np.sqrt(s1 ** 2 + s2 ** 2 + s3 ** 2)
-	return generate_texture(unpolarized, "Unpolarized", is_original=True)
+	if state.current_tab == "Trichromatic":
+		return generate_texture(unpolarized, "Unpolarized", is_original=True)
+	else:
+		unpolarized_hyper = HSI2RGB(wavelengths, unpolarized, d=65, threshold=0.02)
+		return generate_texture(unpolarized_hyper, "Unpolarized", is_original=True)
 
 def visualize_linear_polarized():
 	s2 = state.npy_data[:, :, 2, :]
 	s1 = state.npy_data[:, :, 1, :]
 	polarized = np.sqrt(s1 ** 2 + s2 ** 2)
-	polarized = np.clip(polarized, 0, 1)
-	return generate_texture(polarized, "Polarized (linear)", is_original=True)
+	if state.current_tab == "Trichromatic":
+		return generate_texture(polarized, "Polarized (linear)", is_original=True)
+	else:
+		polarized_hyper = HSI2RGB(wavelengths, polarized, d=65, threshold=0.02)
+		return generate_texture(polarized_hyper, "Polarized (linear)", is_original=True)
 
 def visualize_circular_polarized():
 	s3 = state.npy_data[:, :, 3, :]
 	polarized = np.sqrt(s3 ** 2)
-	polarized = np.clip(polarized, 0, 1)
-	return generate_texture(polarized, "Polarized (circular)", is_original=True)
+	if state.current_tab == "Trichromatic":
+		return generate_texture(polarized, "Polarized (circular)", is_original=True)
+	else:
+		polarized_hyper = HSI2RGB(wavelengths, polarized, d=65, threshold=0.02)
+		return generate_texture(polarized_hyper, "Polarized (circular)", is_original=True)
 
 def visualize_total_polarized():
 	s2 = state.npy_data[:, :, 2, :]
 	s1 = state.npy_data[:, :, 1, :]
 	s3 = state.npy_data[:, :, 3, :]
 	polarized = np.sqrt(s1 ** 2 + s2 ** 2 + s3 ** 2)
-	polarized = np.clip(polarized, 0, 1)
-	return generate_texture(polarized, "Polarized (total)", is_original=True)
+	if state.current_tab == "Trichromatic":
+		return generate_texture(polarized, "Polarized (total)", is_original=True)
+	else:
+		polarized_hyper = HSI2RGB(wavelengths, polarized, d=65, threshold=0.02)
+		return generate_texture(polarized_hyper, "Polarized (total)", is_original=True)
 
 visualization_functions = {
 	"original": visualize_original,

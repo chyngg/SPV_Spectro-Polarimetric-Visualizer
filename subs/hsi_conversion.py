@@ -30,8 +30,8 @@ def HSI2RGB(wY, stokes_data, d, threshold):
 	y = y[:i]
 	z = z[:i]
 
-	# Extract s0 (Total Intensity)
-	s0 = stokes_data[:, :, 0, :]  # (ydim, xdim, 21)
+	# Extract s0
+	s0 = stokes_data
 
 	# Normalize s0
 	s0 = s0 / np.max(s0)
