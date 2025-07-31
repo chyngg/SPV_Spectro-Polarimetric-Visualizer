@@ -81,21 +81,15 @@ def load_npy_with_history(file_path):
 	update_history_checkboxes()
 
 def update_history_checkboxes():
-	dpg.delete_item("history_group", children_only=True)
+	dpg.delete_item("checkbox_area", children_only=True)
 
 	for specific_file_path in state.recent_files:
 		filename = os.path.basename(specific_file_path)
 		dpg.add_checkbox(
 			label=filename,
-			parent="history_group",
+			parent="checkbox_area",
 			callback=make_checkbox_callback(specific_file_path)
 		)
-
-	dpg.add_button(label="Load Single File", callback=load_file_callback, parent="history_group", width=-1)
-	dpg.add_separator(parent="history_group")
-	dpg.add_button(label="Show graph for Selected Files", callback=show_combined_graph, parent="history_group", width=-1)
-	dpg.add_combo(items=state.graph_options, parent="history_group", default_value="s0", tag="multi_graph_options",
-				  callback=multi_graph_option_callback, width=-1)
 
 def load_file_callback():
 	if len(state.checked_files) != 1:

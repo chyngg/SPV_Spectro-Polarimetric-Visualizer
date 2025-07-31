@@ -64,7 +64,14 @@ with dpg.group(parent='left_menu', indent=5) as left_menu:
 	dpg.add_separator()
 	dpg.add_text("History")
 	with dpg.group(tag="history_group"):
-		pass
+		with dpg.child_window(tag="checkbox_area", height=250, parent="history_group", autosize_x=True, border=True):
+			pass
+		dpg.add_button(label="Load Single File", callback=io_utils.load_file_callback, parent="history_group", width=-1)
+		dpg.add_separator(parent="history_group")
+		dpg.add_button(label="Show graph for Selected Files", callback=io_utils.show_combined_graph, parent="history_group", width=-1)
+		dpg.add_combo(items=state.graph_options, parent="history_group", default_value="s0", tag="multi_graph_options",
+					  callback=io_utils.multi_graph_option_callback, width=-1)
+
 dpg.bind_item_theme(left_menu, menu_theme)
 
 # TOOLS RIGHT MENU
@@ -143,5 +150,9 @@ dpg.create_viewport(title='Spectro-polarimetric Visualizer')
 dpg.set_primary_window('main_window', True)
 dpg.setup_dearpygui()
 dpg.show_viewport()
+
+state.recent_files = io_utils.get_recent_files(30)
+io_utils.update_history_checkboxes()
+
 dpg.start_dearpygui()
 dpg.destroy_context()
