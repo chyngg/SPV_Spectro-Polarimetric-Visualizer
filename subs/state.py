@@ -1,5 +1,6 @@
 npy_data = None
 selected_file_name = None
+recent_files = []
 last_figure = None
 current_tab = "Trichromatic"
 selected_option = "original"

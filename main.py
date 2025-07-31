@@ -61,10 +61,9 @@ with dpg.group(parent='left_menu', indent=5) as left_menu:
 							 horizontal=True)
 	dpg.add_spacer(height=5)
 	dpg.add_separator()
-	with dpg.child_window(width=300, height=200, parent="left_menu"):
-		dpg.add_text("History")
-		with dpg.group(tag="history_group"):
-			pass
+	dpg.add_text("History")
+	with dpg.group(tag="history_group"):
+		pass
 dpg.bind_item_theme(left_menu, menu_theme)
 
 # TOOLS RIGHT MENU

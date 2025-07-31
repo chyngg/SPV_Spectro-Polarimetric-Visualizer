@@ -1,7 +1,7 @@
 import dearpygui.dearpygui as dpg
 import numpy as np
 import os
-from . import state
+from subs import state
 from .visualization import update_visualization
 
 def open_import_dialog():
@@ -19,7 +19,7 @@ def file_selected_callback(sender, app_data):
 
 	selected_file_path = app_data['file_path_name']
 	state.selected_file_name = os.path.basename(selected_file_path)
-	load_npy_and_display(selected_file_path)
+	load_npy_with_history(selected_file_path)
 
 	if dpg.does_item_exist("import_dialog_id"):
 		dpg.delete_item("import_dialog_id")
@@ -65,3 +65,26 @@ def update_wavelength_options():
 	state.selected_wavelength = new_items[0]
 	dpg.configure_item("wavelength_options", items=new_items)
 	dpg.set_value("wavelength_options", new_items[0])
+
+def load_npy_with_history(file_path):
+	if not file_path:
+		return
+
+	state.recent_files = [fp for fp in state.recent_files if fp != file_path]
+	state.recent_files.insert(0, file_path)
+	state.recent_files = state.recent_files[:10]
+	load_npy_and_display(file_path)
+	update_history_buttons()
+
+def update_history_buttons():
+	dpg.delete_item("history_group", children_only=True)
+	for specific_file_path in state.recent_files:
+		filename = os.path.basename(specific_file_path)
+		dpg.add_button(
+			label=filename,
+			parent="history_group",
+			callback=make_history_callback(specific_file_path)
+		)
+
+def make_history_callback(file_path):
+	return lambda sender, app_data: load_npy_and_display(file_path)
