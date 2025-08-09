@@ -50,5 +50,4 @@ When using SPV in academic projects, please cite:
     version = {1.1.1},
     year = 2025
 }
-
 ```
