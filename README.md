@@ -38,3 +38,17 @@ python main.py
     - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - Graph plotting for multiple `.npy` files
 - Save the visualization as `.png`
+
+## About
+
+This project was created by Chaeyeong LEE.
+When using SPV in academic projects, please cite: 
+```ascii
+@software{SPV,
+    title = {Spectro-Polarimetric Visualizer},
+    author = {Chaeyeong LEE and Seunghwan BAEK},
+    version = {1.1.1},
+    year = 2025
+}
+
+```
