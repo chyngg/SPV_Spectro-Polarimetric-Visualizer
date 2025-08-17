@@ -134,15 +134,15 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
 
 	# Draw rectangle overlay (Graph region)
-	if state.show_rectangle_overlay and (state.lower_right_x > state.upper_left_x) and (state.lower_right_y > state.upper_left_y):
+	if state.show_rectangle_overlay and (state.upper_right_x > state.lower_left_x) and (state.upper_right_y > state.lower_left_y):
 		try:
 			x_scale = 760 / w
 			y_scale = 540 / h
 
-			rect_x = state.upper_left_x * x_scale
-			rect_y = (h - state.lower_right_y) * y_scale
-			rect_w = (state.lower_right_x - state.upper_left_x) * x_scale
-			rect_h = (state.lower_right_y - state.upper_left_y) * y_scale
+			rect_x = state.lower_left_x * x_scale
+			rect_y = (h - state.upper_right_y) * y_scale
+			rect_w = (state.upper_right_x - state.lower_left_x) * x_scale
+			rect_h = (state.upper_right_y - state.lower_left_y) * y_scale
 
 			# Rectangle(left, bottom), width, height
 			rect = Rectangle(

@@ -7,6 +7,7 @@ def init_history_db():
         CREATE TABLE IF NOT EXISTS file_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             path TEXT UNIQUE,
+            data_type TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)

@@ -52,28 +52,27 @@ def on_close_graph_window():
 	state.show_rectangle_overlay = False
 	update_visualization(state.selected_option)
 
-def on_upper_left_x():
+def on_lower_left_x():
 	try:
-		state.upper_left_x = float(dpg.get_value("upper_left_x"))
+		state.lower_left_x = float(dpg.get_value("lower_left_x"))
 	except ValueError:
 		return
 
-def on_upper_left_y():
+def on_lower_left_y():
 	try:
-		state.upper_left_y = float(dpg.get_value("upper_left_y"))
+		state.lower_left_y = float(dpg.get_value("lower_left_y"))
 	except ValueError:
 		return
 
-def on_lower_right_x():
+def on_upper_right_x():
 	try:
-		state.lower_right_x = float(dpg.get_value("lower_right_x"))
+		state.upper_right_x = float(dpg.get_value("upper_right_x"))
 	except ValueError:
-		print("Invalid coordinates")
 		return
 
-def on_lower_right_y():
+def on_upper_right_y():
 	try:
-		state.lower_right_y = float(dpg.get_value("lower_right_y"))
+		state.lower_right_y = float(dpg.get_value("upper_right_y"))
 	except ValueError:
 		return
 

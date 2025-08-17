@@ -17,10 +17,10 @@ vmin = 0
 temp_abs_vmax = 0
 input_vmax = 0
 input_vmin = 0
-upper_left_x = 0
-upper_left_y = 0
-lower_right_x = 0
-lower_right_y = 0
+lower_left_x = 0
+lower_left_y = 0
+upper_right_x = 0
+upper_right_y = 0
 visualizing_by_wavelength = False
 show_rectangle_overlay = False
 

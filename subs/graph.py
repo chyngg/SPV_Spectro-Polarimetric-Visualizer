@@ -13,8 +13,8 @@ def view_graph():
 
 	try:
 		state.show_rectangle_overlay = True
-		x1, x2 = sorted([int(state.upper_left_x), int(state.lower_right_x)])
-		y1, y2 = sorted([int(state.upper_left_y), int(state.lower_right_y)])
+		x1, x2 = sorted([int(state.lower_left_x), int(state.upper_right_x)])
+		y1, y2 = sorted([int(state.lower_left_y), int(state.upper_right_y)])
 		height, width = state.npy_data.shape[:2]
 		x1, x2 = max(0, x1), min(width, x2)
 		y1, y2 = max(0, y1), min(height, y2)
@@ -50,17 +50,16 @@ def view_graph():
 			mean_values = np.mean(selected_crop, axis=(0, 1))
 
 			band_count = state.npy_data.shape[3]
-			ax.set_xticks(np.arange(450, 651, 20))  # 20nm 간격
 			if band_count == 21: # Hyperspectral
 				wavelengths = np.arange(450, 651, 10)  # Hyperspectral: 450~650nm
 				ax.set_xlabel("Wavelength (nm)")
 				ax.plot(wavelengths, mean_values, marker='o')
 			elif band_count == 3: # Trichromatic
-				wavelengths = [460, 540, 620]  # Trichromatic: blue, green, red
+				wavelengths = np.array([460, 540, 620])  # Trichromatic: blue, green, red
 				ax.set_xlabel("Channel")
-				rgb_labels = ["Blue (460nm)", "Green (540nm)", "Red (620nm)"]
-				ax.set_xlabel("Channel")
-				ax.bar(rgb_labels, mean_values, color=["blue", "green", "red"])
+				ax.plot(wavelengths, mean_values, marker='o')
+				ax.set_xticks(wavelengths)
+				ax.set_xticklabels(["Blue (460nm)", "Green (540nm)", "Red (620nm)"])
 
 			ax.set_title(f"Mean {state.crop_graph_option} across wavelengths")
 			ax.set_ylabel(f"Mean {state.crop_graph_option}")
@@ -99,7 +98,6 @@ def view_graph():
 
 def show_combined_graph():
 	if not state.checked_files:
-		print("[INFO] No files selected.")
 		return
 
 	try:
@@ -109,7 +107,6 @@ def show_combined_graph():
 			npy_data = np.load(file_path)
 
 			if npy_data.ndim != 4 or npy_data.shape[2] != 4:
-				print(f"[WARNING] Skipping {file_path}: unexpected shape {npy_data.shape}")
 				continue
 
 			s0 = normalize(npy_data[:, :, 0, :])
@@ -135,7 +132,6 @@ def show_combined_graph():
 
 			selected_data = data_map.get(state.multi_graph_option)
 			if selected_data is None:
-				print(f"[WARNING] Unknown graph option: {state.multi_graph_option}")
 				continue
 
 			mean_values = np.mean(selected_data, axis=(0, 1))
@@ -146,42 +142,45 @@ def show_combined_graph():
 				wavelengths = np.arange(450, 651, 10)
 				ax.plot(wavelengths, mean_values, marker='o', label=filename)
 			elif band_count == 3:
-				rgb_labels = ["Blue (460nm)", "Green (540nm)", "Red (620nm)"]
-				ax.bar(rgb_labels, mean_values, alpha=0.5, label=filename)
+				wavelengths = np.array([460, 540, 620])  # Trichromatic: blue, green, red
+				ax.set_xlabel("Channel")
+				ax.plot(wavelengths, mean_values, marker='o', label=filename)
+				ax.set_xticks(wavelengths)
+				ax.set_xticklabels(["Blue (460nm)", "Green (540nm)", "Red (620nm)"])
 
-		ax.set_title(f"Mean {state.multi_graph_option} for Selected Files")
-		ax.set_xlabel("Wavelength (nm)" if band_count == 21 else "Channel")
-		ax.set_ylabel(f"Mean {state.multi_graph_option}")
-		ax.legend()
-		ax.grid(True)
+			ax.set_title(f"Mean {state.multi_graph_option} for Selected Files")
+			ax.set_xlabel("Wavelength (nm)" if band_count == 21 else "Channel")
+			ax.set_ylabel(f"Mean {state.multi_graph_option}")
+			ax.legend()
+			ax.grid(True)
 
-		canvas = FigureCanvas(fig)
-		canvas.draw()
-		image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(
-			canvas.get_width_height()[::-1] + (4,)
-		)
-		image_array = image_array.astype(np.float32) / 255.0
+			canvas = FigureCanvas(fig)
+			canvas.draw()
+			image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(
+				canvas.get_width_height()[::-1] + (4,)
+			)
+			image_array = image_array.astype(np.float32) / 255.0
 
-		if not dpg.does_item_exist("graph_texture"):
-			with dpg.texture_registry(show=False):
-				dpg.add_dynamic_texture(width=image_array.shape[1], height=image_array.shape[0],
-										default_value=image_array.flatten(), tag="graph_texture")
-		else:
-			dpg.set_value("graph_texture", image_array.flatten())
+			if not dpg.does_item_exist("graph_texture"):
+				with dpg.texture_registry(show=False):
+					dpg.add_dynamic_texture(width=image_array.shape[1], height=image_array.shape[0],
+											default_value=image_array.flatten(), tag="graph_texture")
+			else:
+				dpg.set_value("graph_texture", image_array.flatten())
 
-		if not dpg.does_item_exist("graph_window"):
-			with dpg.window(label="Graph Window", tag="graph_window", width=700, height=500, pos=(100, 100),
-							on_close=on_close_graph_window):
-				dpg.add_image("graph_texture")
-		else:
-			dpg.configure_item("graph_window", show=True)
+			if not dpg.does_item_exist("graph_window"):
+				with dpg.window(label="Graph Window", tag="graph_window", width=700, height=500, pos=(100, 100),
+								on_close=on_close_graph_window):
+					dpg.add_image("graph_texture")
+			else:
+				dpg.configure_item("graph_window", show=True)
+
 
 	except Exception as e:
-		print(f"[ERROR] Failed to show combined graph: {e}")
+		return
 
 	finally:
 		plt.close()
-
 
 def normalize(x):
 	if x.size == 0:
