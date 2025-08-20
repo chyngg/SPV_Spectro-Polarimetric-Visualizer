@@ -118,24 +118,23 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	generate_texture(selected_data, f"{selected_stokes} - {selected_wavelengths} channel", cmap, vmin_, vmax_)
 
 def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_original=False):
-	h, w = state.npy_data.shape[:2]
 	fig, ax = plt.subplots(figsize=(7.6, 5.4))
-	if is_original:
-		display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
-		img = ax.imshow(display_image)
+	try:
+		h, w = state.npy_data.shape[:2]
+		if is_original:
+			display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
+			img = ax.imshow(display_image)
 
-	elif image_data.ndim == 2:
-		display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
-		display_image = display_image / (np.max(display_image) + 1e-8)
-		img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
-	else:
-		display_image = cv2.resize(np.mean(image_data, axis=2), (760, 540), interpolation=cv2.INTER_LINEAR)
-		display_image = display_image / (np.max(display_image) + 1e-8)
-		img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
-
-	# Draw rectangle overlay (Graph region)
-	if state.show_rectangle_overlay and (state.upper_right_x > state.lower_left_x) and (state.upper_right_y > state.lower_left_y):
-		try:
+		elif image_data.ndim == 2:
+			display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
+			display_image = display_image / (np.max(display_image) + 1e-8)
+			img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
+		else:
+			display_image = cv2.resize(np.mean(image_data, axis=2), (760, 540), interpolation=cv2.INTER_LINEAR)
+			display_image = display_image / (np.max(display_image) + 1e-8)
+			img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
+		# Draw rectangle overlay (Graph region)
+		if state.show_rectangle_overlay and (state.upper_right_x > state.lower_left_x) and (state.upper_right_y > state.lower_left_y):
 			x_scale = 760 / w
 			y_scale = 540 / h
 
@@ -153,44 +152,44 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 				alpha=0.3
 			)
 			ax.add_patch(rect)
-		except Exception as e:
-			print(f"[WARN] Rectangle drawing failed: {e}")
 
-	ax.axis("on")
-	ax.set_title(title)
+		ax.axis("on")
+		ax.set_title(title)
 
-	try:
-		tick_x = np.linspace(0, 760, 5)
-		tick_y = np.linspace(0, 540, 5)
-		label_x = [f"{int(w * x / 760)}" for x in tick_x]
-		label_y = [f"{int(h * (1 - y / 540))}" for y in tick_y]  # 아래가 0
+		try:
+			tick_x = np.linspace(0, 760, 5)
+			tick_y = np.linspace(0, 540, 5)
+			label_x = [f"{int(w * x / 760)}" for x in tick_x]
+			label_y = [f"{int(h * (1 - y / 540))}" for y in tick_y]  # 아래가 0
 
-		ax.set_xticks(tick_x)
-		ax.set_yticks(tick_y)
-		ax.set_xticklabels(label_x)
-		ax.set_yticklabels(label_y)
-		ax.tick_params(labelsize=8)
-		ax.set_xlabel("X", fontsize=10)
-		ax.set_ylabel("Y", fontsize=10)
-	except:
-		pass
+			ax.set_xticks(tick_x)
+			ax.set_yticks(tick_y)
+			ax.set_xticklabels(label_x)
+			ax.set_yticklabels(label_y)
+			ax.tick_params(labelsize=8)
+			ax.set_xlabel("X", fontsize=10)
+			ax.set_ylabel("Y", fontsize=10)
+		except:
+			pass
 
-	if not is_original:
-		cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.05, pad=0.02)
-		cbar.ax.tick_params(labelsize=8)
+		if not is_original:
+			cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.05, pad=0.02)
+			cbar.ax.tick_params(labelsize=8)
 
-	canvas = FigureCanvas(fig)
-	canvas.draw()
-	image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(canvas.get_width_height()[::-1] + (4,))
-	image_array = image_array.astype(np.float32) / 255.0  # Normalize (0~1)
+		canvas = FigureCanvas(fig)
+		canvas.draw()
+		image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(canvas.get_width_height()[::-1] + (4,))
+		image_array = image_array.astype(np.float32) / 255.0  # Normalize (0~1)
 
-	state.last_figure = fig
+		state.last_figure = fig
 
-	texture_name = "uploaded_texture"
+		texture_name = "uploaded_texture"
 
-	dpg.set_value(texture_name, image_array.flatten())
-	dpg.set_item_width("uploaded_texture", 760)
-	dpg.set_item_height("uploaded_texture", 540)
+		dpg.set_value(texture_name, image_array.flatten())
+		dpg.set_item_width("uploaded_texture", 760)
+		dpg.set_item_height("uploaded_texture", 540)
+	finally:
+		plt.close(fig)
 
 def visualize_original():
 	s0 = state.npy_data[:, :, 0, :]

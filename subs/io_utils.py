@@ -110,22 +110,18 @@ def checkbox_callback(sender, app_data, file_path):
 def add_file_to_history(file_path):
 	conn = sqlite3.connect("history.db")
 	c = conn.cursor()
-	try:
-		arr = np.load(file_path, mmap_mode="r")
-		if arr.ndim == 4 and arr.shape[2] == 4:
-			if int(arr.shape[3]) == 3:
-				data_type = "Trichromatic"
-			else:
-				data_type = "Hyperspectral"
+	arr = np.load(file_path, mmap_mode="r")
+	if int(arr.shape[-1]) == 3:
+		data_type = "Trichromatic"
+	else:
+		data_type = "Hyperspectral"
 
-			c.execute("""
-				        INSERT OR REPLACE INTO file_history (path, data_type, timestamp) 
-				        VALUES (?, ?, CURRENT_TIMESTAMP)
-				    """, (file_path, data_type))
-			conn.commit()
-			conn.close()
-	except Exception:
-		pass
+	c.execute("""
+				INSERT OR REPLACE INTO file_history (path, data_type, timestamp) 
+				VALUES (?, ?, CURRENT_TIMESTAMP)
+			""", (file_path, data_type))
+	conn.commit()
+	conn.close()
 
 def get_recent_files(limit=40):
 	conn = sqlite3.connect("history.db")

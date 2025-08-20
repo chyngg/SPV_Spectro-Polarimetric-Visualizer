@@ -85,7 +85,6 @@ def view_graph():
 			else:
 				dpg.configure_item("graph_window", show=True)
 
-
 		else:
 			print("Unsupported data format.")
 			return

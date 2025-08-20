@@ -72,7 +72,7 @@ def on_upper_right_x():
 
 def on_upper_right_y():
 	try:
-		state.lower_right_y = float(dpg.get_value("upper_right_y"))
+		state.upper_right_y = float(dpg.get_value("upper_right_y"))
 	except ValueError:
 		return
 

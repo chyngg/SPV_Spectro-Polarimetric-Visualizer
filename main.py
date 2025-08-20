@@ -116,9 +116,9 @@ with dpg.group(parent='nodes_cat_A', indent=20) as ndo_cat_A:
 	with dpg.group(horizontal=True):
 		dpg.add_text("Upper Right |  ")
 		dpg.add_text("X: ")
-		dpg.add_input_text(tag="lower_right_x", callback=callbacks.on_upper_right_x, width=70)
+		dpg.add_input_text(tag="upper_right_x", callback=callbacks.on_upper_right_x, width=70)
 		dpg.add_text("Y: ")
-		dpg.add_input_text(tag="lower_right_y", callback=callbacks.on_upper_right_y, width=70)
+		dpg.add_input_text(tag="upper_right_y", callback=callbacks.on_upper_right_y, width=70)
 	dpg.add_separator()
 	dpg.add_text("Select graph option:")
 	dpg.add_combo(items=state.graph_options, default_value="s0", tag="crop_graph_options",
