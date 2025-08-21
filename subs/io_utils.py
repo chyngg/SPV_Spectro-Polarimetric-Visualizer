@@ -2,18 +2,28 @@ import dearpygui.dearpygui as dpg
 import numpy as np
 import os
 import sqlite3
+import tkinter as tk
+from tkinter import filedialog
 from subs import state
 from .visualization import update_visualization
 from .graph import show_combined_graph
 from .callbacks import multi_graph_option_callback
 
 def open_import_dialog():
-	if dpg.does_item_exist("import_dialog_id"):
-		dpg.delete_item("import_dialog_id")
+	root = tk.Tk()
+	root.withdraw()
 
-	with dpg.file_dialog(directory_selector=False, show=True, callback=file_selected_callback,
-						 tag="import_dialog_id", width=800, height=400):
-		dpg.add_file_extension(".npy", color=(0, 200, 255, 255))
+	file_path = filedialog.askopenfilename(
+		title = "Select a .npy file",
+		filetypes = [("NumPy Array files", "*.npy")]
+	)
+
+	if not file_path:
+		return
+
+	add_file_to_history(file_path)
+	state.selected_file_name = os.path.basename(file_path)
+	load_npy_with_history(file_path)
 
 def file_selected_callback(sender, app_data):
 	if not app_data or 'file_path_name' not in app_data:
@@ -29,8 +39,20 @@ def file_selected_callback(sender, app_data):
 		dpg.delete_item("import_dialog_id")
 
 def open_export_dialog():
-	with dpg.file_dialog(directory_selector=False, show=True, callback=export_image_callback, tag="export_dialog_id", width=800, height=400):
-		dpg.add_file_extension(".png", color=(0, 200, 0, 255))
+	root = tk.Tk()
+	root.withdraw()
+
+	save_path = filedialog.asksaveasfilename(
+		defaultextension = ".png",
+		filetypes = [("PNG Image", "*.png")],
+		title = "Save Image As"
+	)
+
+	if not save_path:
+		return
+
+	if state.last_figure:
+		state.last_figure.savefig(save_path, dpi=300, bbox_inches='tight')
 
 def export_image_callback(app_data):
 	save_path = app_data
