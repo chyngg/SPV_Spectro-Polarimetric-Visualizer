@@ -29,11 +29,11 @@ def view_graph():
 		s1_crop = normalize(s1_crop)
 		s2_crop = normalize(s2_crop)
 		s3_crop = normalize(s3_crop)
-
 		dolp_crop = np.sqrt(s1_crop**2 + s2_crop**2) /np.maximum(s0_crop, 1e-6)
 		aolp_crop = 0.5 * np.arctan2(s2_crop, np.maximum(s1_crop, 1e-6))
 		docp_crop = np.abs(s3_crop) / np.maximum(s0_crop, 1e-6)
 		cop_crop = 0.5 * np.arctan2(s3_crop, np.sqrt(s1_crop**2 + s2_crop**2))
+
 		data_map = {
 			"s0": s0_crop,
 			"s1": s1_crop,

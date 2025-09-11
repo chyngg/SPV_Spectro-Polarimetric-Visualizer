@@ -37,12 +37,12 @@ def HSI2RGB(wY, stokes_data, d, threshold):
 	s0 = s0 / np.max(s0)
 
 	# Compute k (Scaling factor)
-	k = 1 / np.trapezoid(y * I, wY)
+	k = 1 / np.trapz(y * I, wY)
 
 	# Compute X, Y, Z for image
-	X = k * np.trapezoid(s0 * (I * x), wY, axis=2)
-	Y = k * np.trapezoid(s0 * (I * y), wY, axis=2)
-	Z = k * np.trapezoid(s0 * (I * z), wY, axis=2)
+	X = k * np.trapz(s0 * (I * x), wY, axis=2)
+	Y = k * np.trapz(s0 * (I * y), wY, axis=2)
+	Z = k * np.trapz(s0 * (I * z), wY, axis=2)
 
 	XYZ = np.stack([X, Y, Z], axis=-1)  # Shape: (ydim, xdim, 3)
 

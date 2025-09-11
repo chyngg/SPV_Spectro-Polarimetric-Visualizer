@@ -67,15 +67,18 @@ def load_npy_and_display(file_path=None):
 		state.npy_data = np.load(file_path)
 		missing_mask = np.isnan(state.npy_data) | (state.npy_data < -1e6) | (state.npy_data > 1e6)
 		missing_pixels = np.any(missing_mask, axis=(2, 3))
-		state.npy_data[missing_pixels, :, :] = 0
+		state.npy_data[missing_pixels] = 0
+		dim = state.npy_data.ndim
 		last_dim = state.npy_data.shape[-1]
 
-		if last_dim == 3:
+		if dim == 4 and last_dim == 3: # RGB
 			state.current_tab = "Trichromatic"
 			update_visualization("original")
-		else:
+		elif dim == 4 and last_dim == 21: # Hyperpsectral
 			state.current_tab = "Hyperspectral"
 			update_visualization("original_hyper")
+		elif dim == 5 and last_dim == 3: # RGB Mueller
+			state.current_tab = "RGB_Mueller"
 		update_wavelength_options()
 
 	except Exception as e:

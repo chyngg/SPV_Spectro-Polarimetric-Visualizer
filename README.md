@@ -1,6 +1,6 @@
 # SPV: Spectro-Polarimetric Visualizer
 
-[[Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
+[[Click here to download Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
 
 <p align="center">
   <img src="/assets/readme/RGB_1.png" alt="RGB Image" width="45%" />
@@ -37,7 +37,13 @@ python main.py
     - Stokes parameters (`s0`, `s1`, `s2` , `s3`)
     - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - Graph plotting for multiple `.npy` files
+  - Stokes parameters (`s0`, `s1`, `s2` , `s3`)
+  - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - Save the visualization as `.png`
+
+## TO-DO
+- Visualization of Mueller-matrix image
+
 
 ## About
 

@@ -36,7 +36,7 @@ def reload_visualization():
 		update_wavelengths_visualization(state.selected_wavelength, state.selected_option)
 
 def reset_visualization():
-	if state.selected_option == "s0" or state.selected_option == "dolp" or state.selected_option == "docp":
+	if state.selected_option == "s0" or state.selected_option == "DoLP" or state.selected_option == "DoCP":
 		(state.vmin, state.vmax) = (0, 1)
 	else:
 		(state.vmin, state.vmax) = (-state.temp_abs_vmax, state.temp_abs_vmax)
@@ -89,4 +89,5 @@ def on_vmin_change():
 		state.input_vmin = vmin_
 	except ValueError:
 		state.vmin = 0
+
 
