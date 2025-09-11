@@ -37,7 +37,7 @@ def generate_histogram(data_list, labels, colors, title, xlabel, ylabel, bins=20
 
 def show_stokes_histogram(parameter, direction="X"):
 	state.shown_histogram = parameter
-	if state.npy_data is None:
+	if state.npy_data is None or state.current_tab == "RGB_Mueller":
 		return
 
 	s0, s1, s2, s3 = state.npy_data[:, :, :, 0].transpose(2, 0, 1)

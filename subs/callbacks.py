@@ -1,6 +1,6 @@
 from . import state
 import dearpygui.dearpygui as dpg
-from .visualization import update_visualization, update_wavelengths_visualization
+from .visualization import update_visualization, update_wavelengths_visualization, visualize_rgb_mueller_grid
 from .histogram import show_stokes_histogram
 
 def change_direction(sender, app_data):
@@ -8,6 +8,8 @@ def change_direction(sender, app_data):
 	show_stokes_histogram(parameter=state.shown_histogram, direction=state.selected_direction)
 
 def show_histogram_callback(parameter):
+	if state.current_tab == "RGB_Mueller":
+		return
 	show_stokes_histogram(parameter=parameter, direction=state.selected_direction)
 
 def set_selected_option(sender):
@@ -24,23 +26,34 @@ def select_option_callback():
 	update_wavelengths_visualization(state.selected_wavelength, state.selected_stokes)
 
 def activate_visualization():
+	if state.current_tab == "RGB_Mueller":
+		return
 	dpg.configure_item("polarimetric_options", enabled=True)
 	dpg.configure_item("wavelength_options", enabled=True)
 	update_wavelengths_visualization(state.selected_wavelength, state.selected_stokes)
 
 def reload_visualization():
 	(state.vmin, state.vmax) = (state.input_vmin, state.input_vmax)
-	if not state.visualizing_by_wavelength:
-		update_visualization(state.selected_option)
-	else:
+	if state.visualizing_by_wavelength:
 		update_wavelengths_visualization(state.selected_wavelength, state.selected_option)
+	elif state.current_tab != "RGB_Mueller":
+		update_visualization(state.selected_option)
+	else: #RGB_Mueller
+		if state.vmin < state.vmax:
+			current_channel = state.rgb_map[state.mueller_selected_channel]
+			visualize_rgb_mueller_grid(state.npy_data, channel=current_channel, vmin=state.vmin, vmax=state.vmax)
 
 def reset_visualization():
-	if state.selected_option == "s0" or state.selected_option == "DoLP" or state.selected_option == "DoCP":
-		(state.vmin, state.vmax) = (0, 1)
+	if state.current_tab == "RGB_Mueller":
+		current_channel = state.rgb_map[state.mueller_selected_channel]
+		(state.vmin, state.vmax) = (-1, 1)
+		visualize_rgb_mueller_grid(state.npy_data, channel=current_channel, vmin=-1, vmax=1)
 	else:
-		(state.vmin, state.vmax) = (-state.temp_abs_vmax, state.temp_abs_vmax)
-	update_visualization(state.selected_option)
+		if state.selected_option == "s0" or state.selected_option == "DoLP" or state.selected_option == "DoCP":
+			(state.vmin, state.vmax) = (0, 1)
+		else:
+			(state.vmin, state.vmax) = (-state.temp_abs_vmax, state.temp_abs_vmax)
+		update_visualization(state.selected_option)
 
 def crop_graph_option_callback():
 	state.crop_graph_option = dpg.get_value("crop_graph_options")
@@ -90,4 +103,7 @@ def on_vmin_change():
 	except ValueError:
 		state.vmin = 0
 
+def mueller_select_option_callback():
+	state.mueller_selected_channel = dpg.get_value("mueller_channel")
+	visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel], vmin=-1, vmax=1)
 

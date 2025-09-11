@@ -50,16 +50,16 @@ with dpg.group(parent='left_menu', indent=5) as left_menu:
 	dpg.add_button(label="Distribution of Stokes vector", callback=lambda: histogram.show_stokes_histogram(1), width=-1)
 	dpg.add_spacer(height=5)
 	dpg.add_separator()
-	dpg.add_button(label="Gradient distributions of\n\t  Stokes vector", callback=lambda: callbacks.show_histogram_callback(2),
-				   width=-1)
+	dpg.add_button(label="Gradient distributions of\n\t  Stokes vector",
+				   callback=lambda: callbacks.show_histogram_callback(2), width=-1)
 	dpg.add_button(label="Gradient distributions of\nStokes vector derivatives",
 				   callback=lambda: callbacks.show_histogram_callback(3), width=-1)
-	dpg.add_button(label="Distributions of polarization features", callback=lambda: callbacks.show_histogram_callback(4),
-				   width=-1)
+	dpg.add_button(label="Distributions of polarization features",
+				   callback=lambda: callbacks.show_histogram_callback(4), width=-1)
 	with dpg.group(horizontal=True):
 		dpg.add_text('Select Direction: ')
-		dpg.add_radio_button(items=["X", "Y"], callback=callbacks.change_direction, tag="Direction", default_value="X",
-							 horizontal=True)
+		dpg.add_radio_button(items=["X", "Y"], callback=callbacks.change_direction, tag="Direction",
+							 default_value="X", horizontal=True)
 	dpg.add_spacer(height=5)
 	dpg.add_separator()
 	dpg.add_text("History")
@@ -68,9 +68,10 @@ with dpg.group(parent='left_menu', indent=5) as left_menu:
 			pass
 		dpg.add_button(label="Load Single File", callback=io_utils.load_file_callback, parent="history_group", width=-1)
 		dpg.add_separator(parent="history_group")
-		dpg.add_button(label="Show graph for Selected Files", callback=io_utils.show_combined_graph, parent="history_group", width=-1)
-		dpg.add_combo(items=state.graph_options, parent="history_group", default_value="s0", tag="multi_graph_options",
-					  callback=io_utils.multi_graph_option_callback, width=-1)
+		dpg.add_button(label="Show graph for Selected Files", callback=io_utils.show_combined_graph,
+					   parent="history_group", width=-1)
+		dpg.add_combo(items=state.graph_options, parent="history_group", default_value="s0",
+					  tag="multi_graph_options", callback=io_utils.multi_graph_option_callback, width=-1)
 
 dpg.bind_item_theme(left_menu, menu_theme)
 
@@ -87,18 +88,29 @@ with dpg.group(parent='tools', indent=5) as tools:
 	dpg.add_button(label='DoCP', callback=lambda: callbacks.set_selected_option("DoCP"), width=-1)
 	dpg.add_button(label='CoP', callback=lambda: callbacks.set_selected_option("CoP"), width=-1)
 	dpg.add_button(label='Unpolarized', callback=lambda: callbacks.set_selected_option("Unpolarized"), width=-1)
-	dpg.add_button(label='Polarized (Linear)', callback=lambda: callbacks.set_selected_option("Polarized (linear)"), width=-1)
-	dpg.add_button(label='Polarized (Circular)', callback=lambda: callbacks.set_selected_option("Polarized (circular)"), width=-1)
-	dpg.add_button(label='Polarized (total)', callback=lambda: callbacks.set_selected_option("Polarized (total)"), width=-1)
+	dpg.add_button(label='Polarized (Linear)', callback=lambda: callbacks.set_selected_option("Polarized (linear)"),
+				   width=-1)
+	dpg.add_button(label='Polarized (Circular)', callback=lambda: callbacks.set_selected_option("Polarized (circular)"),
+				   width=-1)
+	dpg.add_button(label='Polarized (total)', callback=lambda: callbacks.set_selected_option("Polarized (total)"),
+				   width=-1)
 	dpg.add_spacer(height=10)
 	dpg.add_separator()
 
 	dpg.add_text('Visualize by Individual Wavelength: ')
 	dpg.add_button(label="Visualize", callback=lambda: callbacks.activate_visualization(), width=-1)
 	dpg.add_text('Select Visualization option:')
-	dpg.add_combo(items=state.selectable_options, default_value="s0", tag="polarimetric_options", callback=callbacks.select_option_callback, enabled=False, width=-1)
+	dpg.add_combo(items=state.selectable_options, default_value="s0", tag="polarimetric_options",
+				  callback=callbacks.select_option_callback, enabled=False, width=-1)
 	dpg.add_text('Select Wavelength:')
-	dpg.add_combo(items=state.wavelength_options, default_value=state.wavelength_options[0], tag="wavelength_options", callback=callbacks.select_option_callback, enabled=False, width=-1)
+	dpg.add_combo(items=state.wavelength_options, default_value=state.wavelength_options[0], tag="wavelength_options",
+				  callback=callbacks.select_option_callback, enabled=False, width=-1)
+	dpg.add_spacer(height=10)
+	dpg.add_separator()
+
+	dpg.add_text('For Mueller-matrix image: ')
+	dpg.add_combo(items=state.selectable_wavelengths, default_value="R", tag="mueller_channel",
+				  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
 
 dpg.bind_item_theme(tools, tools_theme)
 

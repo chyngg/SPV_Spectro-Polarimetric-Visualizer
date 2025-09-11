@@ -40,11 +40,11 @@ def update_visualization(option):
 	dpg.configure_item("polarimetric_options", enabled=False)
 	dpg.configure_item("wavelength_options", enabled=False)
 
-	if option in visualization_functions:
+	if (option in visualization_functions) and state.current_tab != "RGB_Mueller":
 		state.visualizing_by_wavelength = False
 		visualization_functions[option]()
 	else:
-		print(f"Invalid option: {option}")
+		return
 
 def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	if state.npy_data is None:
@@ -117,7 +117,9 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	state.visualizing_by_wavelength = True
 	generate_texture(selected_data, f"{selected_stokes} - {selected_wavelengths} channel", cmap, vmin_, vmax_)
 
-def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_original=False):
+def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_original=False, normalize=None):
+	if normalize is None:
+		normalize = (vmin is None and vmax is None and not is_original)
 	fig, ax = plt.subplots(figsize=(7.6, 5.4))
 	try:
 		h, w = state.npy_data.shape[:2]
@@ -127,12 +129,17 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 
 		elif image_data.ndim == 2:
 			display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
-			display_image = display_image / (np.max(display_image) + 1e-8)
+			if normalize:
+				rng = np.ptp(display_image)
+				if rng > 0: display_image = (display_image-np.min(display_image)) / (rng + 1e-8)
 			img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
 		else:
 			display_image = cv2.resize(np.mean(image_data, axis=2), (760, 540), interpolation=cv2.INTER_LINEAR)
-			display_image = display_image / (np.max(display_image) + 1e-8)
+			if normalize:
+				rng = np.ptp(display_image)
+				if rng > 0: display_image = (display_image - np.min(display_image)) / (rng + 1e-8)
 			img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
+
 		# Draw rectangle overlay (Graph region)
 		if state.show_rectangle_overlay and (state.upper_right_x > state.lower_left_x) and (state.upper_right_y > state.lower_left_y):
 			x_scale = 760 / w
@@ -156,21 +163,24 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		ax.axis("on")
 		ax.set_title(title)
 
-		try:
-			tick_x = np.linspace(0, 760, 5)
-			tick_y = np.linspace(0, 540, 5)
-			label_x = [f"{int(w * x / 760)}" for x in tick_x]
-			label_y = [f"{int(h * (1 - y / 540))}" for y in tick_y]  # 아래가 0
+		if state.current_tab == "RGB_Mueller":
+			ax.axis("off")
+		else:
+			try:
+				tick_x = np.linspace(0, 760, 5)
+				tick_y = np.linspace(0, 540, 5)
+				label_x = [f"{int(w * x / 760)}" for x in tick_x]
+				label_y = [f"{int(h * (1 - y / 540))}" for y in tick_y]  # 아래가 0
 
-			ax.set_xticks(tick_x)
-			ax.set_yticks(tick_y)
-			ax.set_xticklabels(label_x)
-			ax.set_yticklabels(label_y)
-			ax.tick_params(labelsize=8)
-			ax.set_xlabel("X", fontsize=10)
-			ax.set_ylabel("Y", fontsize=10)
-		except:
-			pass
+				ax.set_xticks(tick_x)
+				ax.set_yticks(tick_y)
+				ax.set_xticklabels(label_x)
+				ax.set_yticklabels(label_y)
+				ax.tick_params(labelsize=8)
+				ax.set_xlabel("X", fontsize=10)
+				ax.set_ylabel("Y", fontsize=10)
+			except:
+				pass
 
 		if not is_original:
 			cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.05, pad=0.02)
@@ -218,7 +228,7 @@ def visualize_s1():
 	state.temp_abs_vmax = max_s1
 	vmin_ = state.vmin if valid else -max_s1
 	vmax_ = state.vmax if valid else max_s1
-	return generate_texture(s1, "s1: Linear Polarization (0°/90°)", "seismic", vmin=vmin_, vmax=vmax_)
+	return generate_texture(s1, "s1: Linear Polarization (0°/90°)", "seismic", vmin=vmin_, vmax=vmax_, normalize=False)
 
 def visualize_s2():
 	s2 = state.npy_data[:, :, 2, :]
@@ -228,7 +238,7 @@ def visualize_s2():
 	state.temp_abs_vmax = max_s2
 	vmin_ = state.vmin if valid else -max_s2
 	vmax_ = state.vmax if valid else max_s2
-	return generate_texture(s2, "s2: Linear Polarization (45°/-45°)", "seismic", vmin=vmin_, vmax=vmax_)
+	return generate_texture(s2, "s2: Linear Polarization (45°/-45°)", "seismic", vmin=vmin_, vmax=vmax_, normalize=False)
 
 def visualize_s3():
 	valid = check_range_valid(state.vmax, state.vmin, "s3")
@@ -238,7 +248,7 @@ def visualize_s3():
 	state.temp_abs_vmax = max_s3
 	vmin_ = state.vmin if valid else -max_s3
 	vmax_ = state.vmax if valid else max_s3
-	return generate_texture(s3, "s3: Circular Polarization", "seismic", vmin=vmin_, vmax=vmax_)
+	return generate_texture(s3, "s3: Circular Polarization", "seismic", vmin=vmin_, vmax=vmax_, normalize=False)
 
 def visualize_dolp():
 	valid = check_range_valid(state.vmax, state.vmin, "dolp")
@@ -343,3 +353,27 @@ visualization_functions = {
 	"Polarized (circular)" : visualize_circular_polarized,
 	"Polarized (total)" : visualize_total_polarized
 }
+
+def _stitch_mueller_4x4_scalar(npy_data: np.ndarray, channel: int) -> np.ndarray:
+	tiles = npy_data[:, :, channel, :, :]  # (H, W, 4, 4)
+
+	rows = []
+	for i in range(4):
+		row_tiles = [tiles[:, :, i, j] for j in range(4)]           # 4개의 (H,W)
+		row_strip = np.concatenate(row_tiles, axis=1)                # (H, W*4)
+		rows.append(row_strip)
+	big_scalar = np.concatenate(rows, axis=0)                        # (H*4, W*4)
+	return big_scalar
+
+def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, vmin: float = -1.0, vmax: float = 1.0):
+	channel_set = ("B", "G", "R")
+	big_scalar = _stitch_mueller_4x4_scalar(data5d, channel)
+	return generate_texture(
+		image_data=big_scalar,
+		title=f"Mueller-Matrix 4x4 ({channel_set[channel]} Channel)",
+		colormap="RdBu",
+		vmin=vmin,
+		vmax=vmax,
+		is_original=False,
+		normalize=False,
+	)

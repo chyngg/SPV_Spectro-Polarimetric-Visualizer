@@ -65,20 +65,33 @@ def load_npy_and_display(file_path=None):
 
 	try:
 		state.npy_data = np.load(file_path)
-		missing_mask = np.isnan(state.npy_data) | (state.npy_data < -1e6) | (state.npy_data > 1e6)
-		missing_pixels = np.any(missing_mask, axis=(2, 3))
-		state.npy_data[missing_pixels] = 0
-		dim = state.npy_data.ndim
-		last_dim = state.npy_data.shape[-1]
+		arr = state.npy_data
+		missing_mask = np.isnan(arr) | (arr < -1e6) | (arr > 1e6)
 
-		if dim == 4 and last_dim == 3: # RGB
+		reduce_axes = tuple(range(2, arr.ndim))  # 5D면 (2,3,4), 4D면 (2,3)
+		missing_pixels = np.any(missing_mask, axis=reduce_axes)  # (H, W)
+
+		arr[missing_pixels, ...] = 0
+		state.npy_data = arr
+		dim = state.npy_data.ndim
+
+		dpg.configure_item("mueller_channel", enabled=False)
+		if dim == 4 and arr.shape[2] == 4 and arr.shape[3] == 3: # RGB
 			state.current_tab = "Trichromatic"
 			update_visualization("original")
-		elif dim == 4 and last_dim == 21: # Hyperpsectral
+		elif dim == 4 and arr.shape[2] == 4 and arr.shape[3] > 3: # Hyperpsectral
 			state.current_tab = "Hyperspectral"
 			update_visualization("original_hyper")
-		elif dim == 5 and last_dim == 3: # RGB Mueller
+		elif dim == 5 and arr.shape[2:] == (3, 4, 4): # RGB Mueller
 			state.current_tab = "RGB_Mueller"
+			(state.vmin, state.vmax) = (-1, 1)
+			from .visualization import visualize_rgb_mueller_grid
+			dpg.configure_item("mueller_channel", enabled=True)
+			visualize_rgb_mueller_grid(arr, channel=2, vmin=-1, vmax=1)
+		else:
+			print("Unsupported data format: ", arr.shape)
+			return
+
 		update_wavelength_options()
 
 	except Exception as e:
