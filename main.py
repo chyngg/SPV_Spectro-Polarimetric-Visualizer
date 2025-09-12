@@ -109,8 +109,10 @@ with dpg.group(parent='tools', indent=5) as tools:
 	dpg.add_separator()
 
 	dpg.add_text('For Mueller-matrix image: ')
-	dpg.add_combo(items=state.selectable_wavelengths, default_value="R", tag="mueller_channel",
-				  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
+	with dpg.group(horizontal=True):
+		dpg.add_text('Channel: ')
+		dpg.add_combo(items=state.selectable_wavelengths, default_value="R", tag="mueller_channel",
+					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
 
 dpg.bind_item_theme(tools, tools_theme)
 
@@ -132,11 +134,11 @@ with dpg.group(parent='nodes_cat_A', indent=20) as ndo_cat_A:
 		dpg.add_text("Y: ")
 		dpg.add_input_text(tag="upper_right_y", callback=callbacks.on_upper_right_y, width=70)
 	dpg.add_separator()
-	dpg.add_text("Select graph option:")
-	dpg.add_combo(items=state.graph_options, default_value="s0", tag="crop_graph_options",
-				  callback=callbacks.crop_graph_option_callback, width=-1)
-	dpg.add_separator()
-	dpg.add_button(label="View Graph", callback=lambda: graph.view_graph(), width=-1)
+	with dpg.group(horizontal=True):
+		dpg.add_text("Select graph option:")
+		dpg.add_combo(items=state.graph_options, default_value="s0", tag="crop_graph_options",
+					  callback=callbacks.crop_graph_option_callback, width=252)
+	dpg.add_button(label="View Graph", callback=lambda: graph.view_graph(), width=400)
 
 # NODES CATEGORY B
 with dpg.group(parent='nodes_cat_B', indent=20) as ndo_cat_B:

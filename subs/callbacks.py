@@ -105,5 +105,6 @@ def on_vmin_change():
 
 def mueller_select_option_callback():
 	state.mueller_selected_channel = dpg.get_value("mueller_channel")
+	state.mueller_selected_correction = dpg.get_value("mueller_correction")
 	visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel], vmin=-1, vmax=1)
 
