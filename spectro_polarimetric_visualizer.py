@@ -88,23 +88,23 @@ with dpg.group(parent='tools', indent=5) as tools:
 	dpg.add_button(label='DoCP', callback=lambda: callbacks.set_selected_option("DoCP"), width=-1)
 	dpg.add_button(label='CoP', callback=lambda: callbacks.set_selected_option("CoP"), width=-1)
 	dpg.add_button(label='Unpolarized', callback=lambda: callbacks.set_selected_option("Unpolarized"), width=-1)
-	dpg.add_button(label='Polarized (Linear)', callback=lambda: callbacks.set_selected_option("Polarized (linear)"),
-				   width=-1)
-	dpg.add_button(label='Polarized (Circular)', callback=lambda: callbacks.set_selected_option("Polarized (circular)"),
-				   width=-1)
-	dpg.add_button(label='Polarized (total)', callback=lambda: callbacks.set_selected_option("Polarized (total)"),
-				   width=-1)
+	with dpg.group(horizontal=True):
+		dpg.add_button(label='Polarized', callback=lambda: callbacks.set_selected_option(f"Polarized ({state.now_polarized})"), width=160)
+		dpg.add_combo(items=state.polarized_options, callback=callbacks.change_polarized_option_callback,default_value="Total",
+					  tag="select_polarized_option", width=110)
 	dpg.add_spacer(height=10)
 	dpg.add_separator()
 
 	dpg.add_text('Visualize by Individual Wavelength: ')
 	dpg.add_button(label="Visualize", callback=lambda: callbacks.activate_visualization(), width=-1)
-	dpg.add_text('Select Visualization option:')
-	dpg.add_combo(items=state.selectable_options, default_value="s0", tag="polarimetric_options",
-				  callback=callbacks.select_option_callback, enabled=False, width=-1)
-	dpg.add_text('Select Wavelength:')
-	dpg.add_combo(items=state.wavelength_options, default_value=state.wavelength_options[0], tag="wavelength_options",
-				  callback=callbacks.select_option_callback, enabled=False, width=-1)
+	with dpg.group(horizontal=True):
+		dpg.add_text('Visualization option:')
+		dpg.add_combo(items=state.selectable_options, default_value="s0", tag="polarimetric_options",
+					  callback=callbacks.select_option_callback, enabled=False, width=-1)
+	with dpg.group(horizontal=True):
+		dpg.add_text('Wavelength:')
+		dpg.add_combo(items=state.wavelength_options, default_value=state.wavelength_options[0], tag="wavelength_options",
+					  callback=callbacks.select_option_callback, enabled=False, width=-1)
 	dpg.add_spacer(height=10)
 	dpg.add_separator()
 
@@ -113,6 +113,14 @@ with dpg.group(parent='tools', indent=5) as tools:
 		dpg.add_text('Channel: ')
 		dpg.add_combo(items=state.selectable_wavelengths, default_value="R", tag="mueller_channel",
 					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
+	with dpg.group(horizontal=True):
+		dpg.add_text('Correction: ')
+		dpg.add_combo(items=state.corrections, default_value=state.corrections[0], tag="mueller_correction",
+					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
+	dpg.add_separator()
+	dpg.add_text('Visualize as RGB: ')
+	dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=-1)
+	dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=-1)
 
 dpg.bind_item_theme(tools, tools_theme)
 
