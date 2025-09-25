@@ -26,9 +26,12 @@ show_rectangle_overlay = False
 
 selectable_options = ["s0", "s1", "s2", "s3", "DoLP", "AoLP", "DoCP", "CoP", "Unpolarized", "Polarized(Linear)", "Polarized(Circular)", "Polarized(total)"]
 wavelength_options = ["R", "G", "B"]
+polarized_options = ["linear", "circular", "total"]
+now_polarized = "total"
 graph_options = ["s0", "s1", "s2", "s3", "DoLP", "AoLP", "DoCP", "CoP"]
-corrections = ["original", "Gamma", "m00"]
+corrections = ["Original", "Gamma", "m00"]
+mueller_rgb_options = ["Positive", "Negative"]
 
 rgb_map = {"B": 0, "G": 1, "R": 2}
 mueller_selected_channel = "R"
-mueller_selected_correction = "original"
+mueller_selected_correction = "Original"

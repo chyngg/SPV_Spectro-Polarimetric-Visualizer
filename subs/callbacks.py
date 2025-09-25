@@ -1,6 +1,6 @@
 from . import state
 import dearpygui.dearpygui as dpg
-from .visualization import update_visualization, update_wavelengths_visualization, visualize_rgb_mueller_grid
+from .visualization import update_visualization, update_wavelengths_visualization, visualize_rgb_mueller_grid, visualize_rgb_mueller_rgbgrid
 from .histogram import show_stokes_histogram
 
 def change_direction(sender, app_data):
@@ -24,6 +24,10 @@ def select_option_callback():
 	state.selected_wavelength = dpg.get_value("wavelength_options")
 	state.selected_stokes = dpg.get_value("polarimetric_options")
 	update_wavelengths_visualization(state.selected_wavelength, state.selected_stokes)
+
+def change_polarized_option_callback(sender):
+	state.now_polarized = dpg.get_value("select_polarized_option")
+	update_visualization(f"Polarized ({state.now_polarized})")
 
 def activate_visualization():
 	if state.current_tab == "RGB_Mueller":
@@ -108,3 +112,8 @@ def mueller_select_option_callback():
 	state.mueller_selected_correction = dpg.get_value("mueller_correction")
 	visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel], vmin=-1, vmax=1)
 
+def mueller_rgb_callback_positive():
+	visualize_rgb_mueller_rgbgrid(state.npy_data, sign=1)
+
+def mueller_rgb_callback_negative():
+	visualize_rgb_mueller_rgbgrid(state.npy_data, sign=-1)

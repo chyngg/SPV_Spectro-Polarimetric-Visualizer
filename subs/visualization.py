@@ -365,15 +365,96 @@ def _stitch_mueller_4x4_scalar(npy_data: np.ndarray, channel: int) -> np.ndarray
 	big_scalar = np.concatenate(rows, axis=0)                        # (H*4, W*4)
 	return big_scalar
 
+def _stitch_mueller_4x4_rgb(rgb_4x4: np.ndarray) -> np.ndarray:
+	rows = []
+	for i in range(4):
+		row_tiles = [rgb_4x4[:, :, :, i, j] for j in range(4)]        # 4개의 (H,W,3)
+		row_strip = np.concatenate(row_tiles, axis=1)                  # (H, W*4, 3)
+		rows.append(row_strip)
+	big_rgb = np.concatenate(rows, axis=0)                             # (H*4, W*4, 3)
+	return big_rgb
+
 def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, vmin: float = -1.0, vmax: float = 1.0):
 	channel_set = ("B", "G", "R")
-	big_scalar = _stitch_mueller_4x4_scalar(data5d, channel)
+
+	# 1) 채널 슬라이스: (H, W, 4, 4)
+	tiles = data5d[:, :, channel, :, :]  # (H, W, 4, 4)
+
+	# 2) 보정 적용: state에서 모드/감마 읽기
+	mode = getattr(state, "mueller_selected_correction", "original")
+	gamma = getattr(state, "mueller_gamma_value", 1/2.2)
+	tiles = _apply_mueller_correction(tiles, mode=mode, gamma=gamma)
+
+	# 3) 4x4 스티치
+	def _stitch_mueller_4x4_scalar(npy_data_4x4: np.ndarray) -> np.ndarray:
+		# npy_data_4x4: (H, W, 4, 4)
+		rows = []
+		for i in range(4):
+			row_tiles = [npy_data_4x4[:, :, i, j] for j in range(4)]
+			row_strip = np.concatenate(row_tiles, axis=1)  # (H, W*4)
+			rows.append(row_strip)
+		big_scalar_local = np.concatenate(rows, axis=0)   # (H*4, W*4)
+		return big_scalar_local
+
+	big_scalar = _stitch_mueller_4x4_scalar(tiles)
+
+	# 4) 제목에 모드 표기
+	title_mode = {
+		"original": "Original",
+		"gamma": f"Gamma (γ={gamma:.3g})",
+		"m00": "m00-Normalized"
+	}.get(mode, mode)
+
 	return generate_texture(
 		image_data=big_scalar,
-		title=f"Mueller-Matrix 4x4 ({channel_set[channel]} Channel)",
+		title=f"Mueller-Matrix 4x4 ({channel_set[channel]} Channel) - {title_mode}",
 		colormap="RdBu",
 		vmin=vmin,
 		vmax=vmax,
 		is_original=False,
 		normalize=False,
 	)
+
+def _apply_mueller_correction(mat4x4: np.ndarray, mode: str = "original", gamma: float = 1/2.2, eps: float = 1e-6) -> np.ndarray:
+	"""
+	mat4x4: (H, W, 4, 4) Mueller matrix per-pixel
+	mode: "original" | "gamma" | "m00"
+	- gamma: signed gamma -> sign(x) * |x|**gamma
+	- m00:   elementwise divide by |m00| (per pixel)
+	"""
+	if mode == "gamma":
+		return np.sign(mat4x4) * (np.abs(mat4x4) ** gamma)
+
+	elif mode == "m00":
+		m00 = mat4x4[:, :, 0, 0]
+		denom = np.maximum(np.abs(m00), eps)
+		return mat4x4 / denom[:, :, None, None]
+
+	else:
+		return mat4x4
+
+def visualize_rgb_mueller_rgbgrid(data5d: np.ndarray, sign: int):
+	if data5d is None:
+		return
+
+	# (H,W,3,4,4) → 보정
+	rgb_4x4 = np.sign(data5d) * (np.abs(data5d) ** (1/2.2))
+
+	# (0,1) 클리핑 모드
+	if sign == -1: # Negative
+		rgb_4x4 = np.clip(rgb_4x4, -1, 0) * (-1)
+	else: # Positive
+		rgb_4x4 = np.clip(rgb_4x4, 0, 1)
+
+	big_rgb = _stitch_mueller_4x4_rgb(rgb_4x4)  # (H*4, W*4, 3)
+
+
+	# RGB는 is_original=True로 넘기면 컬러바 없이 색상 그대로 표시됨
+	return generate_texture(
+		image_data=big_rgb,
+		title=f"Mueller-Matrix 4x4 RGB Grid",
+		is_original=True
+	)
+
+
+

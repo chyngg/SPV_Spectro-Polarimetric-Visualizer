@@ -90,7 +90,7 @@ with dpg.group(parent='tools', indent=5) as tools:
 	dpg.add_button(label='Unpolarized', callback=lambda: callbacks.set_selected_option("Unpolarized"), width=-1)
 	with dpg.group(horizontal=True):
 		dpg.add_button(label='Polarized', callback=lambda: callbacks.set_selected_option(f"Polarized ({state.now_polarized})"), width=160)
-		dpg.add_combo(items=state.polarized_options, callback=callbacks.change_polarized_option_callback,default_value="Total",
+		dpg.add_combo(items=state.polarized_options, callback=callbacks.change_polarized_option_callback,default_value="total",
 					  tag="select_polarized_option", width=110)
 	dpg.add_spacer(height=10)
 	dpg.add_separator()

@@ -14,7 +14,7 @@ You must have at least _Python 3.10_ before running code below.
 git clone https://github.com/chyngg/SPV_Spectro-Polarimetric-Visualizer.git
 cd SPV_Spectro-Polarimetric-Visualizer
 pip install dearpygui dearpygui-extend matplotlib numpy opencv-python scipy
-python main.py
+python spectro_polarimetric_visualizer.py
 ```
 
 ## Features
