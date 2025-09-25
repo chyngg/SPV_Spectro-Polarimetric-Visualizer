@@ -1,3 +1,5 @@
+from sympy import false
+
 npy_data = None
 selected_file_name = None
 recent_files = []
@@ -35,3 +37,5 @@ mueller_rgb_options = ["Positive", "Negative"]
 rgb_map = {"B": 0, "G": 1, "R": 2}
 mueller_selected_channel = "R"
 mueller_selected_correction = "Original"
+gamma = 2.2
+visualizing_gamma = False

@@ -117,3 +117,8 @@ def mueller_rgb_callback_positive():
 
 def mueller_rgb_callback_negative():
 	visualize_rgb_mueller_rgbgrid(state.npy_data, sign=-1)
+
+def on_gamma_change():
+	state.gamma = float(dpg.get_value("gamma_input"))
+	if state.visualizing_gamma:
+		visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel], vmin=-1, vmax=1)

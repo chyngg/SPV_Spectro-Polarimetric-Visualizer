@@ -22,21 +22,9 @@ with dpg.window(tag='main_window'):
 	dpge.add_layout(layout, debug=False, resizable=False, border=True)
 
 # themes
-with dpg.theme() as menu_theme:
-	with dpg.theme_component(dpg.mvButton):
-		dpg.add_theme_color(dpg.mvThemeCol_Button, (252, 186, 3))
-		dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 220, 50))
-		dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255))
-		dpg.add_theme_color(dpg.mvThemeCol_Text, (10, 10, 10))
-with dpg.theme() as tools_theme:
-	with dpg.theme_component(dpg.mvButton):
-		dpg.add_theme_color(dpg.mvThemeCol_Button, (0, 255, 110))
-		dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (50, 255, 160))
-		dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255))
-		dpg.add_theme_color(dpg.mvThemeCol_Text, (10, 10, 10))
-with dpg.theme() as status_theme:
-	with dpg.theme_component(dpg.mvText):
-		dpg.add_theme_color(dpg.mvThemeCol_Text, (100,100,100))
+menu_theme = themes.setup_menu_themes()
+tools_theme = themes.setup_tools_themes()
+status_theme = themes.setup_status_themes()
 
 # LEFT MENU
 with dpg.group(parent='left_menu', indent=5) as left_menu:
@@ -92,7 +80,6 @@ with dpg.group(parent='tools', indent=5) as tools:
 		dpg.add_button(label='Polarized', callback=lambda: callbacks.set_selected_option(f"Polarized ({state.now_polarized})"), width=160)
 		dpg.add_combo(items=state.polarized_options, callback=callbacks.change_polarized_option_callback,default_value="total",
 					  tag="select_polarized_option", width=110)
-	dpg.add_spacer(height=10)
 	dpg.add_separator()
 
 	dpg.add_text('Visualize by Individual Wavelength: ')
@@ -117,10 +104,13 @@ with dpg.group(parent='tools', indent=5) as tools:
 		dpg.add_text('Correction: ')
 		dpg.add_combo(items=state.corrections, default_value=state.corrections[0], tag="mueller_correction",
 					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
-	dpg.add_separator()
+	with dpg.group(horizontal=True):
+		dpg.add_text('Gamma value: ')
+		dpg.add_input_double(tag='gamma_input', default_value=2.2, callback=callbacks.on_gamma_change, width=170)
 	dpg.add_text('Visualize as RGB: ')
-	dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=-1)
-	dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=-1)
+	with dpg.group(parent=tools, horizontal=True):
+		dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=135)
+		dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
 
 dpg.bind_item_theme(tools, tools_theme)
 
@@ -152,10 +142,10 @@ with dpg.group(parent='nodes_cat_A', indent=20) as ndo_cat_A:
 with dpg.group(parent='nodes_cat_B', indent=20) as ndo_cat_B:
 	dpg.add_spacer(height=10)
 	dpg.add_text("Enter vmax:\n")
-	dpg.add_input_text(tag="vmax_input", callback=callbacks.on_vmax_change)
+	dpg.add_input_float(tag="vmax_input", callback=callbacks.on_vmax_change)
 	dpg.add_spacer(height=10)
 	dpg.add_text("Enter vmin:\n")
-	dpg.add_input_text(tag="vmin_input", callback=callbacks.on_vmin_change)
+	dpg.add_input_float(tag="vmin_input", callback=callbacks.on_vmin_change)
 	dpg.add_spacer(height=10)
 	with dpg.group(horizontal=True):
 		dpg.add_button(label="Update Visualization", callback=callbacks.reload_visualization, width=190)

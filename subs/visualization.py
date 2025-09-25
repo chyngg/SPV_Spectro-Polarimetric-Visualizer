@@ -53,8 +53,8 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	stokes_index = {"s0": 0, "s1": 1, "s2": 2, "s3": 3, "DoLP": 4, "DoCP": 5, "AoLP": 6, "CoP": 7, "Unpolarized": 8,
 					"Polarized(Linear)": 9, "Polarized(Circular)": 10, "Polarized(total)": 11}
 	rgb_index = {"R": 0, "G": 1, "B": 2}
-	wavelengths = [f"{450 + i*10}nm" for i in range(21)]
-	hyper_index = {name: idx for idx, name in enumerate(wavelengths)}
+	hyper_wavelengths = [f"{450 + i*10}nm" for i in range(21)]
+	hyper_index = {name: idx for idx, name in enumerate(hyper_wavelengths)}
 	state.selected_option = selected_stokes
 	state.selected_wavelength = selected_wavelengths
 
@@ -214,10 +214,10 @@ def visualize_hyper_rgb():
 
 def visualize_s0():
 	valid = check_range_valid(state.vmax, state.vmin, "s0")
-	vmin_ = state.vmin if valid else 0
-	vmax_ = state.vmax if valid else 1
 	s0 = state.npy_data[:, :, 0, :]
 	s0[s0 < 0] = 1e-6
+	vmin_ = state.vmin if valid else 0
+	vmax_ = state.vmax if valid else np.max(s0)
 	return generate_texture(s0, "s0: Total Intensity", "gray", vmin=vmin_, vmax=vmax_)
 
 def visualize_s1():
@@ -354,6 +354,8 @@ visualization_functions = {
 	"Polarized (total)" : visualize_total_polarized
 }
 
+### For Visualization of Mueller-matrix image
+
 def _stitch_mueller_4x4_scalar(npy_data: np.ndarray, channel: int) -> np.ndarray:
 	tiles = npy_data[:, :, channel, :, :]  # (H, W, 4, 4)
 
@@ -377,15 +379,11 @@ def _stitch_mueller_4x4_rgb(rgb_4x4: np.ndarray) -> np.ndarray:
 def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, vmin: float = -1.0, vmax: float = 1.0):
 	channel_set = ("B", "G", "R")
 
-	# 1) 채널 슬라이스: (H, W, 4, 4)
 	tiles = data5d[:, :, channel, :, :]  # (H, W, 4, 4)
 
-	# 2) 보정 적용: state에서 모드/감마 읽기
 	mode = getattr(state, "mueller_selected_correction", "original")
-	gamma = getattr(state, "mueller_gamma_value", 1/2.2)
-	tiles = _apply_mueller_correction(tiles, mode=mode, gamma=gamma)
+	tiles = _apply_mueller_correction(tiles, mode=mode)
 
-	# 3) 4x4 스티치
 	def _stitch_mueller_4x4_scalar(npy_data_4x4: np.ndarray) -> np.ndarray:
 		# npy_data_4x4: (H, W, 4, 4)
 		rows = []
@@ -398,10 +396,9 @@ def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, vmin: float
 
 	big_scalar = _stitch_mueller_4x4_scalar(tiles)
 
-	# 4) 제목에 모드 표기
 	title_mode = {
-		"original": "Original",
-		"gamma": f"Gamma (γ={gamma:.3g})",
+		"Original": "Original",
+		"Gamma": f"Gamma (γ={state.gamma:.3f})",
 		"m00": "m00-Normalized"
 	}.get(mode, mode)
 
@@ -415,44 +412,46 @@ def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, vmin: float
 		normalize=False,
 	)
 
-def _apply_mueller_correction(mat4x4: np.ndarray, mode: str = "original", gamma: float = 1/2.2, eps: float = 1e-6) -> np.ndarray:
+def _apply_mueller_correction(mat4x4: np.ndarray, mode: str = "Original", eps: float = 1e-6) -> np.ndarray:
 	"""
 	mat4x4: (H, W, 4, 4) Mueller matrix per-pixel
 	mode: "original" | "gamma" | "m00"
 	- gamma: signed gamma -> sign(x) * |x|**gamma
 	- m00:   elementwise divide by |m00| (per pixel)
 	"""
-	if mode == "gamma":
-		return np.sign(mat4x4) * (np.abs(mat4x4) ** gamma)
+	if mode == "Gamma":
+		state.visualizing_gamma = True
+		return (np.abs(mat4x4) ** (1/state.gamma)) * np.sign(mat4x4)
 
 	elif mode == "m00":
 		m00 = mat4x4[:, :, 0, 0]
 		denom = np.maximum(np.abs(m00), eps)
+		state.visualizing_gamma = False
 		return mat4x4 / denom[:, :, None, None]
 
 	else:
+		state.visualizing_gamma = False
 		return mat4x4
 
-def visualize_rgb_mueller_rgbgrid(data5d: np.ndarray, sign: int):
+def visualize_rgb_mueller_rgbgrid(data5d: np.ndarray, sign: int): # Postivie / Negative
 	if data5d is None:
 		return
 
-	# (H,W,3,4,4) → 보정
 	rgb_4x4 = np.sign(data5d) * (np.abs(data5d) ** (1/2.2))
 
-	# (0,1) 클리핑 모드
 	if sign == -1: # Negative
 		rgb_4x4 = np.clip(rgb_4x4, -1, 0) * (-1)
+		title = "Negative"
 	else: # Positive
 		rgb_4x4 = np.clip(rgb_4x4, 0, 1)
+		title = "Positive"
 
 	big_rgb = _stitch_mueller_4x4_rgb(rgb_4x4)  # (H*4, W*4, 3)
+	state.visualizing_gamma = True
 
-
-	# RGB는 is_original=True로 넘기면 컬러바 없이 색상 그대로 표시됨
 	return generate_texture(
 		image_data=big_rgb,
-		title=f"Mueller-Matrix 4x4 RGB Grid",
+		title=title,
 		is_original=True
 	)
 
