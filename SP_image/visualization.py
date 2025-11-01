@@ -456,4 +456,3 @@ def visualize_rgb_mueller_rgbgrid(data5d: np.ndarray, sign: int): # Postivie / N
 	)
 
 
-

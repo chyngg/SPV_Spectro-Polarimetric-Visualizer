@@ -87,7 +87,7 @@ def load_npy_and_display(file_path=None):
 			(state.vmin, state.vmax) = (-1, 1)
 			from .visualization import visualize_rgb_mueller_grid
 			dpg.configure_item("mueller_channel", enabled=True)
-			dpg.configure_item("mueller_correction", enabled=True)
+			dpg.configure_item("mueller_correction_channel", enabled=True)
 			dpg.configure_item("Mueller_rgb_positive", enabled=True)
 			dpg.configure_item("Mueller_rgb_negative", enabled=True)
 			visualize_rgb_mueller_grid(arr, channel=2, vmin=-1, vmax=1)
