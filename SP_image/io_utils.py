@@ -4,7 +4,7 @@ import os
 import sqlite3
 import tkinter as tk
 from tkinter import filedialog
-from subs import state
+from SP_image import state
 from .visualization import update_visualization
 from .graph import show_combined_graph
 from .callbacks import multi_graph_option_callback

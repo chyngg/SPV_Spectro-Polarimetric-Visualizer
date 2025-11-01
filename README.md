@@ -19,7 +19,7 @@ python spectro_polarimetric_visualizer.py
 
 ## Features
 
-
+### For Spectro-Polarimetric image:
 - Visualize for entire wavelengths:
     - Full Stokes parameters (`s0`, `s1`, `s2` , `s3`)
     - Polarization feature maps (`DoLP`, `AoLP`, `DoCP`, `CoP`)
@@ -41,8 +41,10 @@ python spectro_polarimetric_visualizer.py
   - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - Save the visualization as `.png`
 
-## TO-DO
-- Visualization of Mueller-matrix image
+### For Mueller-matrix image:
+- Visualize as 4x4 tiles
+- Original / Gamma Correction / m00 Correction for each channel
+- Positive / Negative values as RGB image
 
 
 ## About

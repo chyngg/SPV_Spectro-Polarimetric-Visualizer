@@ -1,5 +1,3 @@
-from sympy import false
-
 npy_data = None
 selected_file_name = None
 recent_files = []
@@ -39,5 +37,6 @@ mueller_selected_channel = "R"
 mueller_selected_correction_channel = "Original"
 mueller_selected_correction_rgb = "Gamma"
 gamma = 2.2
+mueller_visualize_rgb = False
 visualizing_gamma = False
 visualizing_pos = True

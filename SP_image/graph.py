@@ -1,4 +1,4 @@
-from . import state
+from SP_image import state
 from .visualization import update_visualization
 from .callbacks import on_close_graph_window
 import numpy as np

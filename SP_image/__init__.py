@@ -1,12 +1,12 @@
-from . import callbacks
-from . import visualization
-from . import state
-from . import histogram
-from . import graph
-from . import io_utils
-from . import hsi_conversion
-from . import themes
-from . import history_db
+from SP_image import callbacks
+from SP_image import visualization
+from SP_image import state
+from SP_image import histogram
+from SP_image import graph
+from SP_image import io_utils
+from SP_image import hsi_conversion
+from SP_image import themes
+from SP_image import history_db
 
 __all__ = [
     "callbacks",

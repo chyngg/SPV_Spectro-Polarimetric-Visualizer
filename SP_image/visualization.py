@@ -1,4 +1,4 @@
-from . import state
+from SP_image import state
 import dearpygui.dearpygui as dpg
 import numpy as np
 import cv2
@@ -376,13 +376,12 @@ def _stitch_mueller_4x4_rgb(rgb_4x4: np.ndarray) -> np.ndarray:
 	big_rgb = np.concatenate(rows, axis=0)                             # (H*4, W*4, 3)
 	return big_rgb
 
-def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, vmin: float = -1.0, vmax: float = 1.0):
+def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, correction : str="Original", vmin: float = -1.0, vmax: float = 1.0):
 	channel_set = ("B", "G", "R")
 
+	state.mueller_visualize_rgb = False
 	tiles = data5d[:, :, channel, :, :]  # (H, W, 4, 4)
-
-	mode = getattr(state, "mueller_selected_correction", "original")
-	tiles = _apply_mueller_correction(tiles, mode=mode)
+	tiles = _apply_mueller_correction(tiles, mode=correction)
 
 	def _stitch_mueller_4x4_scalar(npy_data_4x4: np.ndarray) -> np.ndarray:
 		# npy_data_4x4: (H, W, 4, 4)
@@ -400,7 +399,7 @@ def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: int = 0, vmin: float
 		"Original": "Original",
 		"Gamma": f"Gamma (γ={state.gamma:.3f})",
 		"m00": "m00-Normalized"
-	}.get(mode, mode)
+	}.get(correction, correction)
 
 	return generate_texture(
 		image_data=big_scalar,
@@ -433,11 +432,11 @@ def _apply_mueller_correction(mat4x4: np.ndarray, mode: str = "Original", eps: f
 		state.visualizing_gamma = False
 		return mat4x4
 
-def visualize_rgb_mueller_rgbgrid(data5d: np.ndarray, sign: int): # Postivie / Negative
+def visualize_rgb_mueller_rgbgrid(data5d: np.ndarray, correction,  sign: int): # Postivie / Negative
 	if data5d is None:
 		return
-
-	rgb_4x4 = np.sign(data5d) * (np.abs(data5d) ** (1/2.2))
+	state.mueller_visualize_rgb = True
+	rgb_4x4 = _apply_mueller_correction(data5d, mode=correction)
 
 	if sign == -1: # Negative
 		rgb_4x4 = np.clip(rgb_4x4, -1, 0) * (-1)
@@ -448,10 +447,15 @@ def visualize_rgb_mueller_rgbgrid(data5d: np.ndarray, sign: int): # Postivie / N
 
 	big_rgb = _stitch_mueller_4x4_rgb(rgb_4x4)  # (H*4, W*4, 3)
 	state.visualizing_gamma = True
+	title_mode = {
+		"Original": "Original",
+		"Gamma": f"Gamma (γ={state.gamma:.3f})",
+		"m00": "m00-Normalized"
+	}.get(correction, correction)
 
 	return generate_texture(
 		image_data=big_rgb,
-		title=title,
+		title=f"{title} - {title_mode}",
 		is_original=True
 	)
 

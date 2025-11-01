@@ -1,4 +1,4 @@
-from . import state
+from SP_image import state
 import dearpygui.dearpygui as dpg
 from .visualization import update_visualization, update_wavelengths_visualization, visualize_rgb_mueller_grid, visualize_rgb_mueller_rgbgrid
 from .histogram import show_stokes_histogram
@@ -110,8 +110,8 @@ def on_vmin_change():
 def mueller_select_channel_option_callback():
 	state.mueller_selected_channel = dpg.get_value("mueller_channel")
 	state.mueller_selected_correction_channel = dpg.get_value("mueller_correction_channel")
-	print(state.mueller_selected_correction_channel)
-	visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel], vmin=-1, vmax=1)
+	visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel],
+							   correction=state.mueller_selected_correction_channel, vmin=-1, vmax=1)
 
 def mueller_rgb_callback_positive():
 	state.visualizing_pos = True
@@ -124,7 +124,14 @@ def mueller_rgb_callback_negative():
 def on_gamma_change():
 	state.gamma = float(dpg.get_value("gamma_input"))
 	if state.visualizing_gamma:
-		visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel], vmin=-1, vmax=1)
+		if state.mueller_visualize_rgb:
+			if state.visualizing_pos:
+				visualize_rgb_mueller_rgbgrid(state.npy_data, state.mueller_selected_correction_rgb, sign=1)
+			else:
+				visualize_rgb_mueller_rgbgrid(state.npy_data, state.mueller_selected_correction_rgb, sign=-1)
+		else:
+			visualize_rgb_mueller_grid(state.npy_data, channel=state.rgb_map[state.mueller_selected_channel],
+								   correction=state.mueller_selected_correction_channel, vmin=-1, vmax=1)
 
 def mueller_select_rgb_correction_callback():
 	state.mueller_selected_correction_rgb = dpg.get_value("mueller_correction_rgb")

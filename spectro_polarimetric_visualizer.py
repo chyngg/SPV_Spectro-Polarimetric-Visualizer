@@ -1,6 +1,6 @@
 import dearpygui_extend as dpge
 import dearpygui.dearpygui as dpg
-from subs import *
+from SP_image import *
 import numpy as np
 
 dpg.create_context()
@@ -99,11 +99,11 @@ with dpg.group(parent='tools', indent=5) as tools:
 	with dpg.group(horizontal=True):
 		dpg.add_text('Channel: ')
 		dpg.add_combo(items=state.selectable_wavelengths, default_value="R", tag="mueller_channel",
-					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
+					  callback=callbacks.mueller_select_channel_option_callback, enabled=False, width=-1)
 	with dpg.group(horizontal=True):
 		dpg.add_text('Correction: ')
-		dpg.add_combo(items=state.corrections, default_value=state.corrections[0], tag="mueller_correction",
-					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
+		dpg.add_combo(items=state.corrections, default_value=state.corrections[0], tag="mueller_correction_channel",
+					  callback=callbacks.mueller_select_channel_option_callback, enabled=False, width=-1)
 	with dpg.group(horizontal=True):
 		dpg.add_text('Gamma value: ')
 		dpg.add_input_double(tag='gamma_input', default_value=2.2, callback=callbacks.on_gamma_change, width=170)
@@ -111,6 +111,9 @@ with dpg.group(parent='tools', indent=5) as tools:
 	with dpg.group(parent=tools, horizontal=True):
 		dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=135)
 		dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
+	dpg.add_text('Correction: ')
+	dpg.add_combo(items=state.corrections, default_value="Gamma", tag="mueller_correction_rgb",
+				  callback=callbacks.mueller_select_rgb_correction_callback, width=-1)
 
 dpg.bind_item_theme(tools, tools_theme)
 
