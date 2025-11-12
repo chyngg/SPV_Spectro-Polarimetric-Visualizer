@@ -1,4 +1,5 @@
-from SP_image import state
+from subs.SP_image import sp_state
+from subs import common_state
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -36,11 +37,12 @@ def generate_histogram(data_list, labels, colors, title, xlabel, ylabel, bins=20
 	plt.close(fig)
 
 def show_stokes_histogram(parameter, direction="X"):
-	state.shown_histogram = parameter
-	if state.npy_data is None or state.current_tab == "RGB_Mueller":
+	sp_state.shown_histogram = parameter
+	npy_data = common_state.npy_data
+	if npy_data is None or common_state.current_tab == "RGB_Mueller":
 		return
 
-	s0, s1, s2, s3 = state.npy_data[:, :, :, 0].transpose(2, 0, 1)
+	s0, s1, s2, s3 = npy_data[:, :, :, 0].transpose(2, 0, 1)
 
 	dpg.configure_item("polarimetric_options", enabled=False)
 	dpg.configure_item("wavelength_options", enabled=False)
@@ -48,7 +50,7 @@ def show_stokes_histogram(parameter, direction="X"):
 	if parameter == 1: # Distribution of Stokes vector
 		stokes_labels = ["$s_0$", "$s_1$", "$s_2$", "$s_3$"]
 		colors = ['blue', 'orange', 'green', 'red']
-		data_flattened = state.npy_data.reshape(-1, state.npy_data.shape[2])
+		data_flattened = npy_data.reshape(-1, npy_data.shape[2])
 		data_list = [data_flattened[:, i] for i in range(data_flattened.shape[1])]
 		generate_histogram(data_list, stokes_labels, colors, title="Stokes Distribution", xlabel="Value", ylabel="Number of Pixels")
 
@@ -59,7 +61,7 @@ def show_stokes_histogram(parameter, direction="X"):
 		gradients_x = []
 		gradients_y = []
 		for i in range(4):  # s0, s1, s2, s3
-			grad_x, grad_y = np.gradient(state.npy_data[:, :, i, 0])  # Gradient of the first channel
+			grad_x, grad_y = np.gradient(npy_data[:, :, i, 0])  # Gradient of the first channel
 			gradients_x.append(grad_x.flatten())  # Flatten the X-direction gradient
 			gradients_y.append(grad_y.flatten())  # Flatten the Y-direction gradient
 
@@ -99,8 +101,8 @@ def show_stokes_histogram(parameter, direction="X"):
 
 	if parameter == 4:
 		# Compute polarization features
-		dolp = np.sqrt(s1 ** 2 + s2 ** 2) / np.maximum(s0, 1e-6)
-		docp = np.abs(s3) / np.maximum(s0, 1e-6)
+		dolp = np.sqrt(s1 ** 2 + s2 ** 2) / (s0 + 1e-6)
+		docp = np.abs(s3) / (s0 + 1e-6)
 		aolp = 0.5 * np.arctan2(s2, s1)
 		cop = 0.5 * np.arctan2(s3, np.sqrt(s1 ** 2 + s2 ** 2))
 		features = {

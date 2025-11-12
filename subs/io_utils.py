@@ -4,10 +4,11 @@ import os
 import sqlite3
 import tkinter as tk
 from tkinter import filedialog
-from SP_image import state
-from .visualization import update_visualization
-from .graph import show_combined_graph
-from .callbacks import multi_graph_option_callback
+from subs import common_state
+from subs.Mueller_matrix_image import mueller_state
+from subs.SP_image import sp_state
+from subs.SP_image.sp_visualization import update_visualization, update_wavelengths_visualization
+from subs.Mueller_matrix_image.mueller_visualization import visualize_rgb_mueller_grid, visualize_rgb_mueller_rgbgrid
 
 def open_import_dialog():
 	root = tk.Tk()
@@ -22,7 +23,7 @@ def open_import_dialog():
 		return
 
 	add_file_to_history(file_path)
-	state.selected_file_name = os.path.basename(file_path)
+	common_state.selected_file_name = os.path.basename(file_path)
 	load_npy_with_history(file_path)
 
 def file_selected_callback(sender, app_data):
@@ -32,7 +33,7 @@ def file_selected_callback(sender, app_data):
 
 	selected_file_path = app_data['file_path_name']
 	add_file_to_history(selected_file_path)
-	state.selected_file_name = os.path.basename(selected_file_path)
+	common_state.selected_file_name = os.path.basename(selected_file_path)
 	load_npy_with_history(selected_file_path)
 
 	if dpg.does_item_exist("import_dialog_id"):
@@ -51,46 +52,56 @@ def open_export_dialog():
 	if not save_path:
 		return
 
-	if state.last_figure:
-		state.last_figure.savefig(save_path, dpi=300, bbox_inches='tight')
+	if common_state.last_figure:
+		common_state.last_figure.savefig(save_path, dpi=300, bbox_inches='tight')
 
 def export_image_callback(app_data):
 	save_path = app_data
-	if state.last_figure:
-		state.last_figure.savefig(save_path, dpi=300, bbox_inches='tight')
+	if common_state.last_figure:
+		common_state.last_figure.savefig(save_path, dpi=300, bbox_inches='tight')
 
 def load_npy_and_display(file_path=None):
 	if not file_path:
 		return
 
 	try:
-		state.npy_data = np.load(file_path)
-		arr = state.npy_data
+		common_state.npy_data = np.load(file_path)
+		arr = common_state.npy_data
 		missing_mask = np.isnan(arr) | (arr < -1e6) | (arr > 1e6)
 
 		reduce_axes = tuple(range(2, arr.ndim))  # 5D면 (2,3,4), 4D면 (2,3)
 		missing_pixels = np.any(missing_mask, axis=reduce_axes)  # (H, W)
 
 		arr[missing_pixels, ...] = 0
-		state.npy_data = arr
-		dim = state.npy_data.ndim
+		common_state.npy_data = arr
+		dim = common_state.npy_data.ndim
 
 		dpg.configure_item("mueller_channel", enabled=False)
-		if dim == 4 and arr.shape[2] == 4 and arr.shape[3] == 3: # RGB
-			state.current_tab = "Trichromatic"
-			update_visualization("original")
-		elif dim == 4 and arr.shape[2] == 4 and arr.shape[3] > 3: # Hyperpsectral
-			state.current_tab = "Hyperspectral"
+		if dim == 4 and arr.shape[2] == 4 and arr.shape[3] == 3: # SP_image - RGB
+			common_state.current_tab = "Trichromatic"
+			if not sp_state.visualizing_by_wavelength:
+				update_visualization(sp_state.sp_visualizing)
+			else:
+				update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
+
+		elif dim == 4 and arr.shape[2] == 4 and arr.shape[3] > 3: # Hyperspectral
+			common_state.current_tab = "Hyperspectral"
 			update_visualization("original_hyper")
 		elif dim == 5 and arr.shape[2:] == (3, 4, 4): # RGB Mueller
-			state.current_tab = "RGB_Mueller"
-			(state.vmin, state.vmax) = (-1, 1)
-			from .visualization import visualize_rgb_mueller_grid
+			common_state.current_tab = "RGB_Mueller"
+			(common_state.vmin, common_state.vmax) = (-1, 1)
 			dpg.configure_item("mueller_channel", enabled=True)
-			dpg.configure_item("mueller_correction_channel", enabled=True)
+			dpg.configure_item("mueller_correction", enabled=True)
 			dpg.configure_item("Mueller_rgb_positive", enabled=True)
 			dpg.configure_item("Mueller_rgb_negative", enabled=True)
-			visualize_rgb_mueller_grid(arr, channel=2, vmin=-1, vmax=1)
+			if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
+				visualize_rgb_mueller_grid(arr, channel="R", correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
+			else:
+				visualize_rgb_mueller_rgbgrid(arr, correction=mueller_state.mueller_selected_correction, sign=mueller_state.mueller_visualizing)
+
+		elif dim == 2:
+			common_state.current_tab = "Trichromatic"
+			update_visualization("original")
 		else:
 			print("Unsupported data format: ", arr.shape)
 			return
@@ -101,13 +112,13 @@ def load_npy_and_display(file_path=None):
 		print(f"Unexpected error: {e}")
 
 def update_wavelength_options():
-	if state.current_tab == "Trichromatic":
-		new_items = ["R", "G", "B"]
-	else:
+	if common_state.current_tab == "Hyperspectral":
 		new_items = [f"{w}nm" for w in np.arange(450, 651, 10)]
+	else:
+		new_items = ["R", "G", "B"]
 
-	state.selected_wavelengths = new_items
-	state.selected_wavelength = new_items[0]
+	common_state.selected_wavelengths = new_items
+	common_state.selected_wavelength = new_items[0]
 	dpg.configure_item("wavelength_options", items=new_items)
 	dpg.set_value("wavelength_options", new_items[0])
 
@@ -115,16 +126,16 @@ def load_npy_with_history(file_path):
 	if not file_path:
 		return
 
-	state.recent_files = [fp for fp in state.recent_files if fp != file_path]
-	state.recent_files.insert(0, file_path)
-	state.recent_files = get_recent_files(30)
+	common_state.recent_files = [fp for fp in common_state.recent_files if fp != file_path]
+	common_state.recent_files.insert(0, file_path)
+	common_state.recent_files = get_recent_files(30)
 	load_npy_and_display(file_path)
 	update_history_checkboxes()
 
 def update_history_checkboxes():
 	dpg.delete_item("checkbox_area", children_only=True)
 
-	for specific_file_path in state.recent_files:
+	for specific_file_path in common_state.recent_files:
 		filename = os.path.basename(specific_file_path)
 		dpg.add_checkbox(
 			label=filename,
@@ -133,20 +144,20 @@ def update_history_checkboxes():
 		)
 
 def load_file_callback():
-	if len(state.checked_files) != 1:
+	if len(common_state.checked_files) != 1:
 		return
-	load_npy_and_display(state.checked_files[0])
+	load_npy_and_display(common_state.checked_files[0])
 
 def make_checkbox_callback(file_path):
 	return lambda s, a: checkbox_callback(s, a, file_path)
 
 def checkbox_callback(sender, app_data, file_path):
 	if app_data:
-		if file_path not in state.checked_files:
-			state.checked_files.append(file_path)
+		if file_path not in common_state.checked_files:
+			common_state.checked_files.append(file_path)
 	else:
-		if file_path in state.checked_files:
-			state.checked_files.remove(file_path)
+		if file_path in common_state.checked_files:
+			common_state.checked_files.remove(file_path)
 
 def add_file_to_history(file_path):
 	conn = sqlite3.connect("history.db")

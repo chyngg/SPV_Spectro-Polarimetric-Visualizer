@@ -1,6 +1,6 @@
 import dearpygui_extend as dpge
 import dearpygui.dearpygui as dpg
-from SP_image import *
+from subs import *
 import numpy as np
 
 dpg.create_context()
@@ -56,29 +56,29 @@ with dpg.group(parent='left_menu', indent=5) as left_menu:
 			pass
 		dpg.add_button(label="Load Single File", callback=io_utils.load_file_callback, parent="history_group", width=-1)
 		dpg.add_separator(parent="history_group")
-		dpg.add_button(label="Show graph for Selected Files", callback=io_utils.show_combined_graph,
+		dpg.add_button(label="Show graph for Selected Files", callback=graph.show_combined_graph,
 					   parent="history_group", width=-1)
-		dpg.add_combo(items=state.graph_options, parent="history_group", default_value="s0",
-					  tag="multi_graph_options", callback=io_utils.multi_graph_option_callback, width=-1)
+		dpg.add_combo(items=sp_state.graph_options, parent="history_group", default_value="s0",
+					  tag="multi_graph_options", callback=callbacks.multi_graph_option_callback, width=-1)
 
 dpg.bind_item_theme(left_menu, menu_theme)
 
 # TOOLS RIGHT MENU
 with dpg.group(parent='tools', indent=5) as tools:
 	dpg.add_text('Visualize by entire wavelengths:')
-	dpg.add_button(label='original', callback=lambda: callbacks.set_selected_option("original"), width=-1)
-	dpg.add_button(label='s0', callback=lambda: callbacks.set_selected_option("s0"), width=-1)
-	dpg.add_button(label='s1', callback=lambda: callbacks.set_selected_option("s1"), width=-1)
-	dpg.add_button(label='s2', callback=lambda: callbacks.set_selected_option("s2"), width=-1)
-	dpg.add_button(label='s3', callback=lambda: callbacks.set_selected_option("s3"), width=-1)
-	dpg.add_button(label='DoLP', callback=lambda: callbacks.set_selected_option("DoLP"), width=-1)
-	dpg.add_button(label='AoLP', callback=lambda: callbacks.set_selected_option("AoLP"), width=-1)
-	dpg.add_button(label='DoCP', callback=lambda: callbacks.set_selected_option("DoCP"), width=-1)
-	dpg.add_button(label='CoP', callback=lambda: callbacks.set_selected_option("CoP"), width=-1)
-	dpg.add_button(label='Unpolarized', callback=lambda: callbacks.set_selected_option("Unpolarized"), width=-1)
+	dpg.add_button(label='original', callback=lambda: callbacks.set_sp_option("original"), width=-1)
+	dpg.add_button(label='s0', callback=lambda: callbacks.set_sp_option("s0"), width=-1)
+	dpg.add_button(label='s1', callback=lambda: callbacks.set_sp_option("s1"), width=-1)
+	dpg.add_button(label='s2', callback=lambda: callbacks.set_sp_option("s2"), width=-1)
+	dpg.add_button(label='s3', callback=lambda: callbacks.set_sp_option("s3"), width=-1)
+	dpg.add_button(label='DoLP', callback=lambda: callbacks.set_sp_option("DoLP"), width=-1)
+	dpg.add_button(label='AoLP', callback=lambda: callbacks.set_sp_option("AoLP"), width=-1)
+	dpg.add_button(label='DoCP', callback=lambda: callbacks.set_sp_option("DoCP"), width=-1)
+	dpg.add_button(label='CoP', callback=lambda: callbacks.set_sp_option("CoP"), width=-1)
+	dpg.add_button(label='Unpolarized', callback=lambda: callbacks.set_sp_option("Unpolarized"), width=-1)
 	with dpg.group(horizontal=True):
-		dpg.add_button(label='Polarized', callback=lambda: callbacks.set_selected_option(f"Polarized ({state.now_polarized})"), width=160)
-		dpg.add_combo(items=state.polarized_options, callback=callbacks.change_polarized_option_callback,default_value="total",
+		dpg.add_button(label='Polarized', callback=lambda: callbacks.set_sp_option(f"Polarized ({sp_state.now_polarized})"), width=160)
+		dpg.add_combo(items=sp_state.polarized_options, callback=callbacks.change_polarized_option_callback, default_value="total",
 					  tag="select_polarized_option", width=110)
 	dpg.add_separator()
 
@@ -86,34 +86,32 @@ with dpg.group(parent='tools', indent=5) as tools:
 	dpg.add_button(label="Visualize", callback=lambda: callbacks.activate_visualization(), width=-1)
 	with dpg.group(horizontal=True):
 		dpg.add_text('Visualization option:')
-		dpg.add_combo(items=state.selectable_options, default_value="s0", tag="polarimetric_options",
-					  callback=callbacks.select_option_callback, enabled=False, width=-1)
+		dpg.add_combo(items=sp_state.selectable_options, default_value="s0", tag="polarimetric_options",
+					  callback=callbacks.set_sp_by_channel_callback, enabled=False, width=-1)
 	with dpg.group(horizontal=True):
 		dpg.add_text('Wavelength:')
-		dpg.add_combo(items=state.wavelength_options, default_value=state.wavelength_options[0], tag="wavelength_options",
-					  callback=callbacks.select_option_callback, enabled=False, width=-1)
+		dpg.add_combo(items=common_state.wavelength_options, default_value=common_state.wavelength_options[0], tag="wavelength_options",
+					  callback=callbacks.set_sp_by_channel_callback, enabled=False, width=-1)
 	dpg.add_spacer(height=10)
 	dpg.add_separator()
 
 	dpg.add_text('For Mueller-matrix image: ')
 	with dpg.group(horizontal=True):
-		dpg.add_text('Channel: ')
-		dpg.add_combo(items=state.selectable_wavelengths, default_value="R", tag="mueller_channel",
-					  callback=callbacks.mueller_select_channel_option_callback, enabled=False, width=-1)
-	with dpg.group(horizontal=True):
 		dpg.add_text('Correction: ')
-		dpg.add_combo(items=state.corrections, default_value=state.corrections[0], tag="mueller_correction_channel",
-					  callback=callbacks.mueller_select_channel_option_callback, enabled=False, width=-1)
+		dpg.add_combo(items=mueller_state.corrections, default_value=mueller_state.corrections[0], tag="mueller_correction",
+					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
 	with dpg.group(horizontal=True):
 		dpg.add_text('Gamma value: ')
 		dpg.add_input_double(tag='gamma_input', default_value=2.2, callback=callbacks.on_gamma_change, width=170)
+	dpg.add_separator()
+	with dpg.group(horizontal=True):
+		dpg.add_text('Channel: ')
+		dpg.add_combo(items=common_state.wavelength_options, default_value="R", tag="mueller_channel",
+					  callback=callbacks.mueller_channel_callback, enabled=False, width=-1)
 	dpg.add_text('Visualize as RGB: ')
 	with dpg.group(parent=tools, horizontal=True):
 		dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=135)
 		dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
-	dpg.add_text('Correction: ')
-	dpg.add_combo(items=state.corrections, default_value="Gamma", tag="mueller_correction_rgb",
-				  callback=callbacks.mueller_select_rgb_correction_callback, width=-1)
 
 dpg.bind_item_theme(tools, tools_theme)
 
@@ -137,7 +135,7 @@ with dpg.group(parent='nodes_cat_A', indent=20) as ndo_cat_A:
 	dpg.add_separator()
 	with dpg.group(horizontal=True):
 		dpg.add_text("Select graph option:")
-		dpg.add_combo(items=state.graph_options, default_value="s0", tag="crop_graph_options",
+		dpg.add_combo(items=sp_state.graph_options, default_value="s0", tag="crop_graph_options",
 					  callback=callbacks.crop_graph_option_callback, width=252)
 	dpg.add_button(label="View Graph", callback=lambda: graph.view_graph(), width=400)
 
@@ -166,7 +164,7 @@ dpg.set_primary_window('main_window', True)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 
-state.recent_files = io_utils.get_recent_files(30)
+common_state.recent_files = io_utils.get_recent_files(30)
 io_utils.update_history_checkboxes()
 
 dpg.start_dearpygui()

@@ -1,6 +1,7 @@
-from SP_image import state
-from .visualization import update_visualization
-from .callbacks import on_close_graph_window
+from subs.SP_image import sp_state
+from subs import common_state
+from .sp_visualization import update_visualization
+from subs.callbacks import on_close_graph_window
 import numpy as np
 import matplotlib.pyplot as plt
 import dearpygui.dearpygui as dpg
@@ -8,30 +9,31 @@ import os
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 def view_graph():
-	if state.npy_data is None:
+	npy_data = common_state.npy_data
+	if npy_data is None:
 		return
 
 	try:
-		state.show_rectangle_overlay = True
-		x1, x2 = sorted([int(state.lower_left_x), int(state.upper_right_x)])
-		y1, y2 = sorted([int(state.lower_left_y), int(state.upper_right_y)])
-		height, width = state.npy_data.shape[:2]
+		sp_state.show_rectangle_overlay = True
+		x1, x2 = sorted([int(sp_state.lower_left_x), int(sp_state.upper_right_x)])
+		y1, y2 = sorted([int(sp_state.lower_left_y), int(sp_state.upper_right_y)])
+		height, width = common_state.npy_data.shape[:2]
 		x1, x2 = max(0, x1), min(width, x2)
 		y1, y2 = max(0, y1), min(height, y2)
 
 		fig, ax = plt.subplots()
-		s0_crop = state.npy_data[y1:y2, x1:x2, 0, :]  # s0
-		s1_crop = state.npy_data[y1:y2, x1:x2, 1, :]  # s0
-		s2_crop = state.npy_data[y1:y2, x1:x2, 2, :]  # s0
-		s3_crop = state.npy_data[y1:y2, x1:x2, 3, :]  # s0
+		s0_crop = npy_data[y1:y2, x1:x2, 0, :]  # s0
+		s1_crop = npy_data[y1:y2, x1:x2, 1, :]  # s0
+		s2_crop = npy_data[y1:y2, x1:x2, 2, :]  # s0
+		s3_crop = npy_data[y1:y2, x1:x2, 3, :]  # s0
 
 		s0_crop = normalize(s0_crop)
 		s1_crop = normalize(s1_crop)
 		s2_crop = normalize(s2_crop)
 		s3_crop = normalize(s3_crop)
-		dolp_crop = np.sqrt(s1_crop**2 + s2_crop**2) /np.maximum(s0_crop, 1e-6)
-		aolp_crop = 0.5 * np.arctan2(s2_crop, np.maximum(s1_crop, 1e-6))
-		docp_crop = np.abs(s3_crop) / np.maximum(s0_crop, 1e-6)
+		dolp_crop = np.sqrt(s1_crop**2 + s2_crop**2) / (s0_crop + 1e-6)
+		aolp_crop = 0.5 * np.arctan2(s2_crop, (s1_crop + 1e-6))
+		docp_crop = np.abs(s3_crop) / (s0_crop + 1e-6)
 		cop_crop = 0.5 * np.arctan2(s3_crop, np.sqrt(s1_crop**2 + s2_crop**2))
 
 		data_map = {
@@ -45,11 +47,11 @@ def view_graph():
 			"CoP": cop_crop
 		}
 
-		if state.npy_data.ndim == 4 and state.npy_data.shape[2] == 4:
-			selected_crop = data_map.get(state.crop_graph_option)
+		if npy_data.ndim == 4 and npy_data.shape[2] == 4:
+			selected_crop = data_map.get(sp_state.crop_graph_option)
 			mean_values = np.mean(selected_crop, axis=(0, 1))
 
-			band_count = state.npy_data.shape[3]
+			band_count = npy_data.shape[3]
 			if band_count == 21: # Hyperspectral
 				wavelengths = np.arange(450, 651, 10)  # Hyperspectral: 450~650nm
 				ax.set_xlabel("Wavelength (nm)")
@@ -61,8 +63,8 @@ def view_graph():
 				ax.set_xticks(wavelengths)
 				ax.set_xticklabels(["Blue (460nm)", "Green (540nm)", "Red (620nm)"])
 
-			ax.set_title(f"Mean {state.crop_graph_option} across wavelengths")
-			ax.set_ylabel(f"Mean {state.crop_graph_option}")
+			ax.set_title(f"Mean {sp_state.crop_graph_option} across wavelengths")
+			ax.set_ylabel(f"Mean {sp_state.crop_graph_option}")
 			ax.grid(True)
 
 			canvas = FigureCanvas(fig)
@@ -70,7 +72,7 @@ def view_graph():
 			image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(
 				canvas.get_width_height()[::-1] + (4,))
 			image_array = image_array.astype(np.float32) / 255.0
-			update_visualization(state.selected_option)
+			update_visualization(common_state.selected_option)
 
 			if not dpg.does_item_exist("graph_texture"):
 				with dpg.texture_registry(show=False):
@@ -96,13 +98,13 @@ def view_graph():
 		plt.close()
 
 def show_combined_graph():
-	if not state.checked_files:
+	if not common_state.checked_files:
 		return
 
 	try:
 		fig, ax = plt.subplots()
 
-		for file_path in state.checked_files:
+		for file_path in common_state.checked_files:
 			npy_data = np.load(file_path)
 
 			if npy_data.ndim != 4 or npy_data.shape[2] != 4:
@@ -129,7 +131,7 @@ def show_combined_graph():
 				"CoP": cop
 			}
 
-			selected_data = data_map.get(state.multi_graph_option)
+			selected_data = data_map.get(sp_state.multi_graph_option)
 			if selected_data is None:
 				continue
 
@@ -147,9 +149,9 @@ def show_combined_graph():
 				ax.set_xticks(wavelengths)
 				ax.set_xticklabels(["Blue (460nm)", "Green (540nm)", "Red (620nm)"])
 
-			ax.set_title(f"Mean {state.multi_graph_option} for Selected Files")
+			ax.set_title(f"Mean {sp_state.multi_graph_option} for Selected Files")
 			ax.set_xlabel("Wavelength (nm)" if band_count == 21 else "Channel")
-			ax.set_ylabel(f"Mean {state.multi_graph_option}")
+			ax.set_ylabel(f"Mean {sp_state.multi_graph_option}")
 			ax.legend()
 			ax.grid(True)
 
