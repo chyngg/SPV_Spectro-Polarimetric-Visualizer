@@ -7,3 +7,5 @@ gamma = 2.2
 
 mueller_visualizing = "Original" # ["Original", "Gamma", "m00", "Positive", "Negative"]
 visualizing_gamma = False
+
+is_video = False

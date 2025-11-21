@@ -216,7 +216,10 @@ def visualize_hyper_rgb():
 
 def visualize_s0():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "s0")
-	s0 = common_state.npy_data[:, :, 0, :]
+	if common_state.npy_data.ndim == 4:
+		s0 = common_state.npy_data[:, :, 0, :]
+	else:
+		s0 = common_state.npy_data
 	s0[s0 < 0] = 1e-6
 	vmin_ = common_state.vmin if valid else 0
 	vmax_ = common_state.vmax if valid else np.max(s0)

@@ -113,6 +113,50 @@ with dpg.group(parent='tools', indent=5) as tools:
 		dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=135)
 		dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
 
+	dpg.add_separator()
+	dpg.add_text("Mueller video controls:")
+	with dpg.group(horizontal=True):
+		dpg.add_button(
+			label="Play",
+			tag="mueller_video_play",
+			width=70,
+			enabled=False,
+			callback=mueller_video.cb_play,
+		)
+		dpg.add_button(
+			label="Pause",
+			tag="mueller_video_pause",
+			width=70,
+			enabled=False,
+			callback=mueller_video.cb_pause,
+		)
+
+	with dpg.group(horizontal=True):
+		dpg.add_button(
+			label="< Prev",
+			tag="mueller_video_prev",
+			width=70,
+			enabled=False,
+			callback=mueller_video.cb_prev,
+		)
+		dpg.add_button(
+			label="Next >",
+			tag="mueller_video_next",
+			width=70,
+			enabled=False,
+			callback=mueller_video.cb_next,
+		)
+
+	with dpg.group(horizontal=True):
+		dpg.add_text("FPS:")
+		dpg.add_input_text(
+			tag="mueller_video_fps",
+			default_value="10",
+			width=80,
+			enabled=False,
+			callback=mueller_video.cb_fps,
+		)
+
 dpg.bind_item_theme(tools, tools_theme)
 
 # NODES CATEGORY A
@@ -158,6 +202,17 @@ with dpg.group(parent='center_img', indent=5) as center_img:
 		dpg.add_dynamic_texture(760, 540, np.zeros((760, 540, 4), dtype=np.float32).flatten(), tag="uploaded_texture")
 	with dpg.child_window(width=760, height=540, tag="uploaded_image"):
 		dpg.add_image("uploaded_texture", width=760, height=540)
+	dpg.add_slider_int(
+		label="",
+		tag="mueller_video_slider",
+		min_value=0,
+		max_value=1,
+		default_value=0,
+		width=760,
+		enabled=False,  # 처음엔 비활성
+		show=False,  # 처음엔 숨김
+		callback=mueller_video.cb_slider,
+	)
 
 dpg.create_viewport(title='Spectro-polarimetric Visualizer')
 dpg.set_primary_window('main_window', True)

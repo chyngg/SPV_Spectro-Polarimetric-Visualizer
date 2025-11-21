@@ -5,6 +5,7 @@ from subs.SP_image import graph
 from subs.SP_image import hsi_conversion
 from subs.Mueller_matrix_image import mueller_visualization
 from subs.Mueller_matrix_image import mueller_state
+from subs.Mueller_matrix_image import mueller_video
 from subs import callbacks
 from subs import history_db
 from subs import io_utils
@@ -19,6 +20,7 @@ __all__ = [
     "hsi_conversion",
     "mueller_visualization",
     "mueller_state",
+    "mueller_video",
     "callbacks",
     "history_db",
     "io_utils",

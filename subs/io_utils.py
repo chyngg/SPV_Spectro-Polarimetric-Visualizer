@@ -5,7 +5,7 @@ import sqlite3
 import tkinter as tk
 from tkinter import filedialog
 from subs import common_state
-from subs.Mueller_matrix_image import mueller_state
+from subs.Mueller_matrix_image import mueller_state, mueller_video
 from subs.SP_image import sp_state
 from subs.SP_image.sp_visualization import update_visualization, update_wavelengths_visualization
 from subs.Mueller_matrix_image.mueller_visualization import visualize_rgb_mueller_grid, visualize_rgb_mueller_rgbgrid
@@ -65,15 +65,35 @@ def load_npy_and_display(file_path=None):
 		return
 
 	try:
-		common_state.npy_data = np.load(file_path)
+		mueller_video.player.detach_frames()
+	except Exception:
+		pass
+
+	try:
+		raw = np.load(file_path)
+		dim = raw.ndim
+
+		if dim == 6 and raw.shape[-3:] == (3, 4, 4): # Mueller-matrix video
+			common_state.current_tab = "Mueller_video"
+			mueller_video.player.attach_frames(raw)
+
+			dpg.configure_item("mueller_channel", enabled=True)
+			dpg.configure_item("mueller_correction", enabled=True)
+			dpg.configure_item("Mueller_rgb_positive", enabled=True)
+			dpg.configure_item("Mueller_rgb_negative", enabled=True)
+
+			update_wavelength_options()
+			return
+
+		common_state.npy_date = raw
 		arr = common_state.npy_data
-		missing_mask = np.isnan(arr) | (arr < -1e6) | (arr > 1e6)
+		if arr.ndim >= 3:
+			missing_mask = np.isnan(arr) | (arr < -1e6) | (arr > 1e6)
+			reduce_axes = tuple(range(2, arr.ndim))
+			missing_pixels = np.any(missing_mask, axis=reduce_axes)  # (H, W)
+			arr[missing_pixels, ...] = 0
+			common_state.npy_data = arr
 
-		reduce_axes = tuple(range(2, arr.ndim))  # 5D면 (2,3,4), 4D면 (2,3)
-		missing_pixels = np.any(missing_mask, axis=reduce_axes)  # (H, W)
-
-		arr[missing_pixels, ...] = 0
-		common_state.npy_data = arr
 		dim = common_state.npy_data.ndim
 
 		dpg.configure_item("mueller_channel", enabled=False)
@@ -101,7 +121,7 @@ def load_npy_and_display(file_path=None):
 
 		elif dim == 2:
 			common_state.current_tab = "Trichromatic"
-			update_visualization("original")
+			update_visualization("s0")
 		else:
 			print("Unsupported data format: ", arr.shape)
 			return

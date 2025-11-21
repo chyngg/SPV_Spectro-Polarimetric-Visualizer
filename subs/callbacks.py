@@ -1,5 +1,5 @@
 from subs.SP_image import sp_state
-from subs.Mueller_matrix_image import mueller_state
+from subs.Mueller_matrix_image import mueller_state, mueller_video
 from subs import common_state
 import dearpygui.dearpygui as dpg
 from subs.SP_image.sp_visualization import update_visualization, update_wavelengths_visualization
@@ -46,12 +46,14 @@ def reload_visualization():
 	(common_state.vmin, common_state.vmax) = (common_state.input_vmin, common_state.input_vmax)
 	if sp_state.visualizing_by_wavelength:
 		update_wavelengths_visualization(sp_state.selected_wavelength, common_state.selected_option)
-	elif common_state.current_tab != "RGB_Mueller":
+	elif common_state.current_tab != "RGB_Mueller" and common_state.current_tab != "Mueller_video":
 		update_visualization(common_state.selected_option)
-	else: #RGB_Mueller
+	elif common_state.current_tab == "RGB_Mueller": #RGB_Mueller
 		if common_state.vmin < common_state.vmax:
 			current_channel = common_state.wavelength_options[mueller_state.mueller_selected_channel]
 			visualize_rgb_mueller_grid(common_state.npy_data, channel=current_channel, vmin=common_state.vmin, vmax=common_state.vmax)
+	else: # Mueller_video
+		mueller_video.on_mode_or_channel_changed()
 
 def reset_visualization():
 	if common_state.current_tab == "RGB_Mueller":
@@ -117,32 +119,83 @@ def on_vmin_change():
 # ---- For mueller-matrix visualization ----
 
 def mueller_select_option_callback():
-	mueller_state.mueller_selected_correction = dpg.get_value("mueller_correction")
-	if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
-		mueller_state.mueller_visualizing = mueller_state.mueller_selected_correction
-		visualize_rgb_mueller_grid(common_state.npy_data, channel=mueller_state.mueller_selected_channel,
-									correction=mueller_state.mueller_selected_correction, vmin=-1, vmax=1)
-	else:
-		visualize_rgb_mueller_rgbgrid(common_state.npy_data, mueller_state.mueller_selected_correction, sign=mueller_state.mueller_visualizing)
+    mueller_state.mueller_selected_correction = dpg.get_value("mueller_correction")
+
+    # 스칼라 모드일 때는 correction 선택과 mueller_visualizing을 동기화
+    if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
+        mueller_state.mueller_visualizing = mueller_state.mueller_selected_correction
+
+    # 비디오면: 현재 프레임만 새 설정으로 다시 그림
+    if mueller_state.is_video:
+        mueller_video.on_mode_or_channel_changed()
+        return
+
+    # 단일 프레임 RGB Mueller (기존 동작)
+    if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
+        visualize_rgb_mueller_grid(
+            common_state.npy_data,
+            channel=mueller_state.mueller_selected_channel,
+            correction=mueller_state.mueller_selected_correction,
+            vmin=-1,
+            vmax=1,
+        )
+    else:
+        visualize_rgb_mueller_rgbgrid(
+            common_state.npy_data,
+            mueller_state.mueller_selected_correction,
+            sign=mueller_state.mueller_visualizing,
+        )
 
 def mueller_channel_callback():
-	mueller_state.mueller_selected_channel = dpg.get_value("mueller_channel")
-	mueller_state.mueller_visualizing = mueller_state.mueller_selected_correction
-	mueller_select_option_callback()
+    mueller_state.mueller_selected_channel = dpg.get_value("mueller_channel")
+    mueller_state.mueller_visualizing = mueller_state.mueller_selected_correction
+
+    if mueller_state.is_video:
+        mueller_video.on_mode_or_channel_changed()
+    else:
+        mueller_select_option_callback()
 
 def mueller_rgb_callback_positive():
-	mueller_state.mueller_visualizing = "Positive"
-	visualize_rgb_mueller_rgbgrid(common_state.npy_data, mueller_state.mueller_selected_correction, sign="Positive")
+    mueller_state.mueller_visualizing = "Positive"
+    if mueller_state.is_video:
+        mueller_video.on_mode_or_channel_changed()
+    else:
+        visualize_rgb_mueller_rgbgrid(
+            common_state.npy_data,
+            mueller_state.mueller_selected_correction,
+            sign="Positive",
+        )
 
 def mueller_rgb_callback_negative():
-	mueller_state.mueller_visualizing = "Negative"
-	visualize_rgb_mueller_rgbgrid(common_state.npy_data, mueller_state.mueller_selected_correction, sign="Negative")
+    mueller_state.mueller_visualizing = "Negative"
+    if mueller_state.is_video:
+        mueller_video.on_mode_or_channel_changed()
+    else:
+        visualize_rgb_mueller_rgbgrid(
+            common_state.npy_data,
+            mueller_state.mueller_selected_correction,
+            sign="Negative",
+        )
 
 def on_gamma_change():
-	mueller_state.gamma = float(dpg.get_value("gamma_input"))
-	if mueller_state.visualizing_gamma:
-		if mueller_state.mueller_visualizing in mueller_state.mueller_rgb_options: # ["Positive", "Negative"]
-			visualize_rgb_mueller_rgbgrid(common_state.npy_data, mueller_state.mueller_selected_correction, sign=mueller_state.mueller_visualizing)
-		else:
-			visualize_rgb_mueller_grid(common_state.npy_data, channel=mueller_state.mueller_selected_channel,
-									   correction=mueller_state.mueller_selected_correction, vmin=-1, vmax=1)
+    mueller_state.gamma = float(dpg.get_value("gamma_input"))
+    if not mueller_state.visualizing_gamma:
+        return
+
+    if mueller_state.is_video:
+        mueller_video.on_mode_or_channel_changed()
+    else:
+        if mueller_state.mueller_visualizing in mueller_state.mueller_rgb_options:
+            visualize_rgb_mueller_rgbgrid(
+                common_state.npy_data,
+                mueller_state.mueller_selected_correction,
+                sign=mueller_state.mueller_visualizing,
+            )
+        else:
+            visualize_rgb_mueller_grid(
+                common_state.npy_data,
+                channel=mueller_state.mueller_selected_channel,
+                correction=mueller_state.mueller_selected_correction,
+                vmin=-1,
+                vmax=1,
+            )
