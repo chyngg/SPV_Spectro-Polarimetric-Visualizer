@@ -41,15 +41,16 @@ python spectro_polarimetric_visualizer.py
   - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - Save the visualization as `.png`
 
-### For Mueller-matrix image:
+### For Mueller-matrix image / video:
 - Visualize as 4x4 tiles
 - Original / Gamma Correction / m00 Correction for each channel
-- Positive / Negative values as RGB image
+- Positive / Negative values as RGB image + original / Gamma Correction / m00 Correction
+- For video visualization: The video format must be `.npy` file (T(frames), H, W, 3, 4, 4)
 
 
 ## About
 
-This project was created by Chaeyeong LEE.
+This project was created by Chaeyeong Lee.
 When using SPV in academic projects, please cite: 
 ```ascii
 @software{SPV,
