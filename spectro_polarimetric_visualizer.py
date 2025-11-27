@@ -209,8 +209,8 @@ with dpg.group(parent='center_img', indent=5) as center_img:
 		max_value=1,
 		default_value=0,
 		width=760,
-		enabled=False,  # 처음엔 비활성
-		show=False,  # 처음엔 숨김
+		enabled=False,
+		show=False,
 		callback=mueller_video.cb_slider,
 	)
 

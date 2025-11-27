@@ -85,16 +85,15 @@ def load_npy_and_display(file_path=None):
 			update_wavelength_options()
 			return
 
-		common_state.npy_date = raw
+		common_state.npy_data = raw
 		arr = common_state.npy_data
-		if arr.ndim >= 3:
+
+		if dim >= 3:
 			missing_mask = np.isnan(arr) | (arr < -1e6) | (arr > 1e6)
 			reduce_axes = tuple(range(2, arr.ndim))
 			missing_pixels = np.any(missing_mask, axis=reduce_axes)  # (H, W)
 			arr[missing_pixels, ...] = 0
 			common_state.npy_data = arr
-
-		dim = common_state.npy_data.ndim
 
 		dpg.configure_item("mueller_channel", enabled=False)
 		if dim == 4 and arr.shape[2] == 4 and arr.shape[3] == 3: # SP_image - RGB
@@ -107,7 +106,7 @@ def load_npy_and_display(file_path=None):
 		elif dim == 4 and arr.shape[2] == 4 and arr.shape[3] > 3: # Hyperspectral
 			common_state.current_tab = "Hyperspectral"
 			update_visualization("original_hyper")
-		elif dim == 5 and arr.shape[2:] == (3, 4, 4): # RGB Mueller
+		elif dim == 5 and arr.shape[2:] == (3, 4, 4): # RGB Mueller image
 			common_state.current_tab = "RGB_Mueller"
 			(common_state.vmin, common_state.vmax) = (-1, 1)
 			dpg.configure_item("mueller_channel", enabled=True)
