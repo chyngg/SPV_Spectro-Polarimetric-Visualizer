@@ -75,6 +75,7 @@ def load_npy_and_display(file_path=None):
 
 		if dim == 6 and raw.shape[-3:] == (3, 4, 4): # Mueller-matrix video
 			common_state.current_tab = "Mueller_video"
+			update_tools_tab_from_current_tab()
 			mueller_video.player.attach_frames(raw)
 
 			dpg.configure_item("mueller_channel", enabled=True)
@@ -98,6 +99,7 @@ def load_npy_and_display(file_path=None):
 		dpg.configure_item("mueller_channel", enabled=False)
 		if dim == 4 and arr.shape[2] == 4 and arr.shape[3] == 3: # SP_image - RGB
 			common_state.current_tab = "Trichromatic"
+			update_tools_tab_from_current_tab()
 			if not sp_state.visualizing_by_wavelength:
 				update_visualization(sp_state.sp_visualizing)
 			else:
@@ -105,9 +107,12 @@ def load_npy_and_display(file_path=None):
 
 		elif dim == 4 and arr.shape[2] == 4 and arr.shape[3] > 3: # Hyperspectral
 			common_state.current_tab = "Hyperspectral"
+			update_tools_tab_from_current_tab()
 			update_visualization("original_hyper")
+
 		elif dim == 5 and arr.shape[2:] == (3, 4, 4): # RGB Mueller image
 			common_state.current_tab = "RGB_Mueller"
+			update_tools_tab_from_current_tab()
 			(common_state.vmin, common_state.vmax) = (-1, 1)
 			dpg.configure_item("mueller_channel", enabled=True)
 			dpg.configure_item("mueller_correction", enabled=True)
@@ -120,6 +125,7 @@ def load_npy_and_display(file_path=None):
 
 		elif dim == 2:
 			common_state.current_tab = "Trichromatic"
+			update_tools_tab_from_current_tab()
 			update_visualization("s0")
 		else:
 			print("Unsupported data format: ", arr.shape)
@@ -203,3 +209,12 @@ def get_recent_files(limit=40):
 	files = [row[0] for row in c.fetchall()]
 	conn.close()
 	return files
+
+def update_tools_tab_from_current_tab():
+	try:
+		if common_state.current_tab in ("Mueller_video", "RGB_Mueller"):
+			dpg.set_value("tools_tab_bar", "tools_tab_mm")
+		else:
+			dpg.set_value("tools_tab_bar", "tools_tab_sp")
+	except Exception:
+		pass

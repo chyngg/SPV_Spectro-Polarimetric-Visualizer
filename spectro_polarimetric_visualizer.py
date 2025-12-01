@@ -65,97 +65,100 @@ dpg.bind_item_theme(left_menu, menu_theme)
 
 # TOOLS RIGHT MENU
 with dpg.group(parent='tools', indent=5) as tools:
-	dpg.add_text('Visualize by entire wavelengths:')
-	dpg.add_button(label='original', callback=lambda: callbacks.set_sp_option("original"), width=-1)
-	dpg.add_button(label='s0', callback=lambda: callbacks.set_sp_option("s0"), width=-1)
-	dpg.add_button(label='s1', callback=lambda: callbacks.set_sp_option("s1"), width=-1)
-	dpg.add_button(label='s2', callback=lambda: callbacks.set_sp_option("s2"), width=-1)
-	dpg.add_button(label='s3', callback=lambda: callbacks.set_sp_option("s3"), width=-1)
-	dpg.add_button(label='DoLP', callback=lambda: callbacks.set_sp_option("DoLP"), width=-1)
-	dpg.add_button(label='AoLP', callback=lambda: callbacks.set_sp_option("AoLP"), width=-1)
-	dpg.add_button(label='DoCP', callback=lambda: callbacks.set_sp_option("DoCP"), width=-1)
-	dpg.add_button(label='CoP', callback=lambda: callbacks.set_sp_option("CoP"), width=-1)
-	dpg.add_button(label='Unpolarized', callback=lambda: callbacks.set_sp_option("Unpolarized"), width=-1)
-	with dpg.group(horizontal=True):
-		dpg.add_button(label='Polarized', callback=lambda: callbacks.set_sp_option(f"Polarized ({sp_state.now_polarized})"), width=160)
-		dpg.add_combo(items=sp_state.polarized_options, callback=callbacks.change_polarized_option_callback, default_value="total",
-					  tag="select_polarized_option", width=110)
-	dpg.add_separator()
+	with dpg.tab_bar(tag="tools_tab_bar"):
+		with dpg.tab(label="SP_image", tag="tools_tab_sp"):
+			dpg.add_text('Visualize by entire wavelengths:')
+			dpg.add_button(label='original', callback=lambda: callbacks.set_sp_option("original"), width=-1)
+			dpg.add_button(label='s0', callback=lambda: callbacks.set_sp_option("s0"), width=-1)
+			dpg.add_button(label='s1', callback=lambda: callbacks.set_sp_option("s1"), width=-1)
+			dpg.add_button(label='s2', callback=lambda: callbacks.set_sp_option("s2"), width=-1)
+			dpg.add_button(label='s3', callback=lambda: callbacks.set_sp_option("s3"), width=-1)
+			dpg.add_button(label='DoLP', callback=lambda: callbacks.set_sp_option("DoLP"), width=-1)
+			dpg.add_button(label='AoLP', callback=lambda: callbacks.set_sp_option("AoLP"), width=-1)
+			dpg.add_button(label='DoCP', callback=lambda: callbacks.set_sp_option("DoCP"), width=-1)
+			dpg.add_button(label='CoP', callback=lambda: callbacks.set_sp_option("CoP"), width=-1)
+			dpg.add_button(label='Unpolarized', callback=lambda: callbacks.set_sp_option("Unpolarized"), width=-1)
+			with dpg.group(horizontal=True):
+				dpg.add_button(label='Polarized', callback=lambda: callbacks.set_sp_option(f"Polarized ({sp_state.now_polarized})"), width=160)
+				dpg.add_combo(items=sp_state.polarized_options, callback=callbacks.change_polarized_option_callback, default_value="total",
+							  tag="select_polarized_option", width=110)
+			dpg.add_separator()
 
-	dpg.add_text('Visualize by Individual Wavelength: ')
-	dpg.add_button(label="Visualize", callback=lambda: callbacks.activate_visualization(), width=-1)
-	with dpg.group(horizontal=True):
-		dpg.add_text('Visualization option:')
-		dpg.add_combo(items=sp_state.selectable_options, default_value="s0", tag="polarimetric_options",
-					  callback=callbacks.set_sp_by_channel_callback, enabled=False, width=-1)
-	with dpg.group(horizontal=True):
-		dpg.add_text('Wavelength:')
-		dpg.add_combo(items=common_state.wavelength_options, default_value=common_state.wavelength_options[0], tag="wavelength_options",
-					  callback=callbacks.set_sp_by_channel_callback, enabled=False, width=-1)
-	dpg.add_spacer(height=10)
-	dpg.add_separator()
+			dpg.add_text('Visualize by Individual Wavelength: ')
+			dpg.add_button(label="Visualize", callback=lambda: callbacks.activate_visualization(), width=-1)
+			with dpg.group(horizontal=True):
+				dpg.add_text('Visualization option:')
+				dpg.add_combo(items=sp_state.selectable_options, default_value="s0", tag="polarimetric_options",
+							  callback=callbacks.set_sp_by_channel_callback, enabled=False, width=-1)
+			with dpg.group(horizontal=True):
+				dpg.add_text('Wavelength:')
+				dpg.add_combo(items=common_state.wavelength_options, default_value=common_state.wavelength_options[0], tag="wavelength_options",
+							  callback=callbacks.set_sp_by_channel_callback, enabled=False, width=-1)
+			dpg.add_spacer(height=10)
+			dpg.add_separator()
 
-	dpg.add_text('For Mueller-matrix image: ')
-	with dpg.group(horizontal=True):
-		dpg.add_text('Correction: ')
-		dpg.add_combo(items=mueller_state.corrections, default_value=mueller_state.corrections[0], tag="mueller_correction",
-					  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
-	with dpg.group(horizontal=True):
-		dpg.add_text('Gamma value: ')
-		dpg.add_input_double(tag='gamma_input', default_value=2.2, callback=callbacks.on_gamma_change, width=170)
-	dpg.add_separator()
-	with dpg.group(horizontal=True):
-		dpg.add_text('Channel: ')
-		dpg.add_combo(items=common_state.wavelength_options, default_value="R", tag="mueller_channel",
-					  callback=callbacks.mueller_channel_callback, enabled=False, width=-1)
-	dpg.add_text('Visualize as RGB: ')
-	with dpg.group(parent=tools, horizontal=True):
-		dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=135)
-		dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
+		with dpg.tab(label="MM-matrix", tag="tools_tab_mm"):
+			dpg.add_text('For Mueller-matrix image: ')
+			with dpg.group(horizontal=True):
+				dpg.add_text('Correction: ')
+				dpg.add_combo(items=mueller_state.corrections, default_value=mueller_state.corrections[0], tag="mueller_correction",
+							  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
+			with dpg.group(horizontal=True):
+				dpg.add_text('Gamma value: ')
+				dpg.add_input_double(tag='gamma_input', default_value=2.2, callback=callbacks.on_gamma_change, width=170)
+			dpg.add_separator()
+			with dpg.group(horizontal=True):
+				dpg.add_text('Channel: ')
+				dpg.add_combo(items=common_state.wavelength_options, default_value="R", tag="mueller_channel",
+							  callback=callbacks.mueller_channel_callback, enabled=False, width=-1)
+			dpg.add_text('Visualize as RGB: ')
+			with dpg.group(parent=tools, horizontal=True):
+				dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=135)
+				dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
 
-	dpg.add_separator()
-	dpg.add_text("Mueller video controls:")
-	with dpg.group(horizontal=True):
-		dpg.add_button(
-			label="Play",
-			tag="mueller_video_play",
-			width=70,
-			enabled=False,
-			callback=mueller_video.cb_play,
-		)
-		dpg.add_button(
-			label="Pause",
-			tag="mueller_video_pause",
-			width=70,
-			enabled=False,
-			callback=mueller_video.cb_pause,
-		)
+			dpg.add_separator()
+			dpg.add_text("Mueller video controls:")
+			with dpg.group(horizontal=True):
+				dpg.add_button(
+					label="Play",
+					tag="mueller_video_play",
+					width=70,
+					enabled=False,
+					callback=mueller_video.cb_play,
+				)
+				dpg.add_button(
+					label="Pause",
+					tag="mueller_video_pause",
+					width=70,
+					enabled=False,
+					callback=mueller_video.cb_pause,
+				)
 
-	with dpg.group(horizontal=True):
-		dpg.add_button(
-			label="< Prev",
-			tag="mueller_video_prev",
-			width=70,
-			enabled=False,
-			callback=mueller_video.cb_prev,
-		)
-		dpg.add_button(
-			label="Next >",
-			tag="mueller_video_next",
-			width=70,
-			enabled=False,
-			callback=mueller_video.cb_next,
-		)
+			with dpg.group(horizontal=True):
+				dpg.add_button(
+					label="< Prev",
+					tag="mueller_video_prev",
+					width=70,
+					enabled=False,
+					callback=mueller_video.cb_prev,
+				)
+				dpg.add_button(
+					label="Next >",
+					tag="mueller_video_next",
+					width=70,
+					enabled=False,
+					callback=mueller_video.cb_next,
+				)
 
-	with dpg.group(horizontal=True):
-		dpg.add_text("FPS:")
-		dpg.add_input_text(
-			tag="mueller_video_fps",
-			default_value="10",
-			width=80,
-			enabled=False,
-			callback=mueller_video.cb_fps,
-		)
+			with dpg.group(horizontal=True):
+				dpg.add_text("FPS:")
+				dpg.add_input_text(
+					tag="mueller_video_fps",
+					default_value="10",
+					width=80,
+					enabled=False,
+					callback=mueller_video.cb_fps,
+				)
 
 dpg.bind_item_theme(tools, tools_theme)
 
