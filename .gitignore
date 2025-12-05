@@ -3,6 +3,7 @@
 /history.db-*
 history.db*
 *.db
+structure.txt
 
 # Python bytecode / caches
 __pycache__/
