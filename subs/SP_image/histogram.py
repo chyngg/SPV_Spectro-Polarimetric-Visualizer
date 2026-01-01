@@ -4,9 +4,42 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import dearpygui.dearpygui as dpg
+import cv2
+
+CANVAS_WIDTH = 760
+CANVAS_HEIGHT = 540
+MATPLOTLIB_DPI = 100
+
+plt.rcParams["figure.dpi"] = MATPLOTLIB_DPI
+plt.rcParams["figure.figsize"] = (
+    CANVAS_WIDTH / MATPLOTLIB_DPI,
+    CANVAS_HEIGHT / MATPLOTLIB_DPI,
+)
+
+def fit_to_canvas_rgba(image_rgba: np.ndarray, canvas_w: int, canvas_h: int) -> np.ndarray:
+	h, w, c = image_rgba.shape
+	if c != 4:
+		raise ValueError("image_rgba must have 4 channels (RGBA)")
+
+	if (w == canvas_w) and (h == canvas_h):
+		return image_rgba
+
+	scale = min(canvas_w / w, canvas_h / h)
+	new_w = max(1, int(w * scale))
+	new_h = max(1, int(h * scale))
+
+	resized = cv2.resize(image_rgba, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+	canvas = np.zeros((canvas_h, canvas_w, 4), dtype=np.float32)
+	y0 = (canvas_h - new_h) // 2
+	x0 = (canvas_w - new_w) // 2
+	canvas[y0:y0+new_h, x0:x0+new_w, :] = resized
+
+	return canvas
+
 
 def generate_histogram(data_list, labels, colors, title, xlabel, ylabel, bins=200, value_range=(-0.3, 0.3)):
-	fig, ax = plt.subplots(figsize=(7.6, 5.4))
+	fig, ax = plt.subplots()
 	ax.set_title(title)
 	ax.set_xlabel(xlabel)
 	ax.set_ylabel(ylabel)
@@ -33,13 +66,19 @@ def generate_histogram(data_list, labels, colors, title, xlabel, ylabel, bins=20
 	image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(canvas.get_width_height()[::-1] + (4,))
 	image_array = image_array.astype(np.float32) / 255.0  # Normalize (0~1)
 
+	image_array = fit_to_canvas_rgba(
+		image_array,
+		CANVAS_WIDTH,
+		CANVAS_HEIGHT,
+	)
+
 	dpg.set_value("uploaded_texture", image_array.flatten())
 	plt.close(fig)
 
 def show_stokes_histogram(parameter, direction="X"):
 	sp_state.shown_histogram = parameter
 	npy_data = common_state.npy_data
-	if npy_data is None or common_state.current_tab == "RGB_Mueller":
+	if npy_data is None or common_state.current_tab == "Mueller_image":
 		return
 
 	s0, s1, s2, s3 = npy_data[:, :, :, 0].transpose(2, 0, 1)

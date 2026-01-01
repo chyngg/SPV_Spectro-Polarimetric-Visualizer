@@ -71,10 +71,13 @@ def load_npy_and_display(file_path=None):
 
 	try:
 		raw = np.load(file_path)
+		common_state.npy_data = raw
 		dim = raw.ndim
+		common_state.selected_file_name = os.path.basename(file_path)
 
 		if dim == 6 and raw.shape[-3:] == (3, 4, 4): # Mueller-matrix video
 			common_state.current_tab = "Mueller_video"
+			common_state.npy_data = raw
 			update_tools_tab_from_current_tab()
 			mueller_video.player.attach_frames(raw)
 
@@ -82,55 +85,62 @@ def load_npy_and_display(file_path=None):
 			dpg.configure_item("mueller_correction", enabled=True)
 			dpg.configure_item("Mueller_rgb_positive", enabled=True)
 			dpg.configure_item("Mueller_rgb_negative", enabled=True)
+			dpg.configure_item("mueller_histogram", enabled=True)
+			dpg.configure_item("center_status_fileinfo", show=False)
 
 			update_wavelength_options()
 			return
 
-		common_state.npy_data = raw
-		arr = common_state.npy_data
 
 		if dim >= 3:
-			missing_mask = np.isnan(arr) | (arr < -1e6) | (arr > 1e6)
-			reduce_axes = tuple(range(2, arr.ndim))
+			missing_mask = np.isnan(raw) | (raw < -1e6) | (raw > 1e6)
+			reduce_axes = tuple(range(2, raw.ndim))
 			missing_pixels = np.any(missing_mask, axis=reduce_axes)  # (H, W)
-			arr[missing_pixels, ...] = 0
-			common_state.npy_data = arr
+			raw[missing_pixels, ...] = 0
+			common_state.npy_data = raw
 
-		dpg.configure_item("mueller_channel", enabled=False)
-		if dim == 4 and arr.shape[2] == 4 and arr.shape[3] == 3: # SP_image - RGB
+		if dim == 4 and raw.shape[2] == 4 and raw.shape[3] == 3: # SP_image - RGB
 			common_state.current_tab = "Trichromatic"
 			update_tools_tab_from_current_tab()
+			dpg.configure_item("center_status_fileinfo", show=True)
 			if not sp_state.visualizing_by_wavelength:
 				update_visualization(sp_state.sp_visualizing)
 			else:
 				update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
 
-		elif dim == 4 and arr.shape[2] == 4 and arr.shape[3] > 3: # Hyperspectral
+		elif dim == 4 and raw.shape[2] == 4 and raw.shape[3] > 3: # Hyperspectral
 			common_state.current_tab = "Hyperspectral"
 			update_tools_tab_from_current_tab()
+			dpg.configure_item("center_status_fileinfo", show=True)
 			update_visualization("original_hyper")
 
-		elif dim == 5 and arr.shape[2:] == (3, 4, 4): # RGB Mueller image
-			common_state.current_tab = "RGB_Mueller"
+		elif dim == 5 and raw.shape[2:] == (3, 4, 4): # RGB Mueller image
+			common_state.current_tab = "Mueller_image"
 			update_tools_tab_from_current_tab()
 			(common_state.vmin, common_state.vmax) = (-1, 1)
 			dpg.configure_item("mueller_channel", enabled=True)
 			dpg.configure_item("mueller_correction", enabled=True)
 			dpg.configure_item("Mueller_rgb_positive", enabled=True)
 			dpg.configure_item("Mueller_rgb_negative", enabled=True)
+			dpg.configure_item("mueller_histogram", enabled=True)
+			dpg.configure_item("center_status_fileinfo", show=True)
 			if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
-				visualize_rgb_mueller_grid(arr, channel="R", correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
+				visualize_rgb_mueller_grid(raw, channel="R", correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
 			else:
-				visualize_rgb_mueller_rgbgrid(arr, correction=mueller_state.mueller_selected_correction, sign=mueller_state.mueller_visualizing)
+				visualize_rgb_mueller_rgbgrid(raw, correction=mueller_state.mueller_selected_correction, sign=mueller_state.mueller_visualizing)
 
 		elif dim == 2:
 			common_state.current_tab = "Trichromatic"
 			update_tools_tab_from_current_tab()
+			dpg.configure_item("center_status_fileinfo", show=True)
 			update_visualization("s0")
 		else:
-			print("Unsupported data format: ", arr.shape)
+			print("Unsupported data format: ", raw.shape)
 			return
 
+		print(common_state.current_tab)
+		dpg.set_value("status_file_name", common_state.selected_file_name)
+		dpg.set_value("status_file_type", common_state.current_tab)
 		update_wavelength_options()
 
 	except Exception as e:
@@ -212,7 +222,7 @@ def get_recent_files(limit=40):
 
 def update_tools_tab_from_current_tab():
 	try:
-		if common_state.current_tab in ("Mueller_video", "RGB_Mueller"):
+		if common_state.current_tab in ("Mueller_video", "Mueller_image"):
 			dpg.set_value("tools_tab_bar", "tools_tab_mm")
 		else:
 			dpg.set_value("tools_tab_bar", "tools_tab_sp")

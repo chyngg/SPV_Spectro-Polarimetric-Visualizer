@@ -166,7 +166,5 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		texture_name = "uploaded_texture"
 
 		dpg.set_value(texture_name, image_array.flatten())
-		dpg.set_item_width("uploaded_texture", 760)
-		dpg.set_item_height("uploaded_texture", 540)
 	finally:
 		plt.close(fig)

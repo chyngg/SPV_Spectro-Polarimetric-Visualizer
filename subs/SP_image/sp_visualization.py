@@ -9,7 +9,18 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.patches import Rectangle
 from .hsi_conversion import HSI2RGB
 from subs.themes import make_custom_seismic
-matplotlib.use('Agg')
+
+CANVAS_WIDTH = 760
+CANVAS_HEIGHT = 540
+MATPLOTLIB_DPI = 100
+
+matplotlib.use("Agg")
+matplotlib.rcParams["figure.dpi"] = MATPLOTLIB_DPI
+matplotlib.rcParams["figure.figsize"] = (
+    CANVAS_WIDTH / MATPLOTLIB_DPI,
+    CANVAS_HEIGHT / MATPLOTLIB_DPI,
+)
+
 wavelengths = np.arange(450, 651, 10)
 
 def check_valid_by_wavelength(visualizing):
@@ -41,7 +52,7 @@ def update_visualization(option):
 	dpg.configure_item("polarimetric_options", enabled=False)
 	dpg.configure_item("wavelength_options", enabled=False)
 
-	if (option in visualization_functions) and common_state.current_tab != "RGB_Mueller":
+	if (option in visualization_functions) and common_state.current_tab != "Mueller_image":
 		sp_state.visualizing_by_wavelength = False
 		visualization_functions[option]()
 	else:
@@ -56,6 +67,7 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	rgb_index = {"R": 0, "G": 1, "B": 2}
 	hyper_wavelengths = [f"{450 + i*10}nm" for i in range(21)]
 	hyper_index = {name: idx for idx, name in enumerate(hyper_wavelengths)}
+
 	sp_state.selected_option = selected_stokes
 	sp_state.selected_wavelength = selected_wavelengths
 
@@ -97,7 +109,6 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 		polarized_total = np.sqrt(s1 ** 2 + s2 ** 2 + s3 ** 2)
 		selected_data = polarized_total
 
-	# 시각화 범위 설정
 	if selected_stokes in ["s1", "s2", "s3"]:
 		cmap = "seismic"
 	elif selected_stokes in ["CoP"]:
@@ -118,24 +129,45 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	sp_state.visualizing_by_wavelength = True
 	generate_texture(selected_data, f"{selected_stokes} - {selected_wavelengths} channel", cmap, vmin_, vmax_)
 
+def fit_to_canvas_rgba(image_rgba: np.ndarray, canvas_w: int, canvas_h: int) -> np.ndarray:
+	h, w, c = image_rgba.shape
+	if c != 4:
+		raise ValueError("image_rgba must have 4 channels (RGBA)")
+
+	if (w == canvas_w) and (h == canvas_h):
+		return image_rgba
+
+	scale = min(canvas_w / w, canvas_h / h)
+	new_w = max(1, int(w * scale))
+	new_h = max(1, int(h * scale))
+
+	resized = cv2.resize(image_rgba, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+	canvas = np.zeros((canvas_h, canvas_w, 4), dtype=np.float32)
+	y0 = (canvas_h - new_h) // 2
+	x0 = (canvas_w - new_w) // 2
+	canvas[y0:y0+new_h, x0:x0+new_w, :] = resized
+
+	return canvas
+
 def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_original=False, normalize=None):
 	if normalize is None:
 		normalize = (vmin is None and vmax is None and not is_original)
-	fig, ax = plt.subplots(figsize=(7.6, 5.4))
+	fig, ax = plt.subplots()
 	try:
 		h, w = common_state.npy_data.shape[:2]
 		if is_original:
-			display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
+			display_image = cv2.resize(image_data, (CANVAS_WIDTH, CANVAS_HEIGHT), interpolation=cv2.INTER_LINEAR)
 			img = ax.imshow(display_image)
 
 		elif image_data.ndim == 2:
-			display_image = cv2.resize(image_data, (760, 540), interpolation=cv2.INTER_LINEAR)
+			display_image = cv2.resize(image_data, (CANVAS_WIDTH, CANVAS_HEIGHT), interpolation=cv2.INTER_LINEAR)
 			if normalize:
 				rng = np.ptp(display_image)
 				if rng > 0: display_image = (display_image-np.min(display_image)) / (rng + 1e-8)
 			img = ax.imshow(display_image, cmap=colormap, interpolation="nearest", vmin=vmin, vmax=vmax)
 		else:
-			display_image = cv2.resize(np.mean(image_data, axis=2), (760, 540), interpolation=cv2.INTER_LINEAR)
+			display_image = cv2.resize(np.mean(image_data, axis=2), (CANVAS_WIDTH, CANVAS_HEIGHT), interpolation=cv2.INTER_LINEAR)
 			if normalize:
 				rng = np.ptp(display_image)
 				if rng > 0: display_image = (display_image - np.min(display_image)) / (rng + 1e-8)
@@ -144,8 +176,8 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		# Draw rectangle overlay (Graph region)
 		if sp_state.show_rectangle_overlay and (sp_state.upper_right_x > sp_state.lower_left_x) and (
 				sp_state.upper_right_y > sp_state.lower_left_y):
-			x_scale = 760 / w
-			y_scale = 540 / h
+			x_scale = CANVAS_WIDTH / w
+			y_scale = CANVAS_HEIGHT / h
 
 			rect_x = sp_state.lower_left_x * x_scale
 			rect_y = (h - sp_state.upper_right_y) * y_scale
@@ -165,14 +197,14 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		ax.axis("on")
 		ax.set_title(title)
 
-		if common_state.current_tab == "RGB_Mueller":
+		if common_state.current_tab == "Mueller_image":
 			ax.axis("off")
 		else:
 			try:
-				tick_x = np.linspace(0, 760, 5)
-				tick_y = np.linspace(0, 540, 5)
-				label_x = [f"{int(w * x / 760)}" for x in tick_x]
-				label_y = [f"{int(h * (1 - y / 540))}" for y in tick_y]  # 아래가 0
+				tick_x = np.linspace(0, CANVAS_WIDTH, 5)
+				tick_y = np.linspace(0, CANVAS_HEIGHT, 5)
+				label_x = [f"{int(w * x / CANVAS_WIDTH)}" for x in tick_x]
+				label_y = [f"{int(h * (1 - y / CANVAS_HEIGHT))}" for y in tick_y]  # 아래가 0
 
 				ax.set_xticks(tick_x)
 				ax.set_yticks(tick_y)
@@ -192,14 +224,17 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		canvas.draw()
 		image_array = np.frombuffer(canvas.buffer_rgba(), dtype=np.uint8).reshape(canvas.get_width_height()[::-1] + (4,))
 		image_array = image_array.astype(np.float32) / 255.0  # Normalize (0~1)
+		image_array = fit_to_canvas_rgba(
+			image_array,
+			CANVAS_WIDTH,
+			CANVAS_HEIGHT,
+		)
 
 		common_state.last_figure = fig
 
 		texture_name = "uploaded_texture"
 
 		dpg.set_value(texture_name, image_array.flatten())
-		dpg.set_item_width("uploaded_texture", 760)
-		dpg.set_item_height("uploaded_texture", 540)
 	finally:
 		plt.close(fig)
 
