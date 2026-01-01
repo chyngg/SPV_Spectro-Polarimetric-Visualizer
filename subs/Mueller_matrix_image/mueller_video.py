@@ -12,7 +12,6 @@ from subs.Mueller_matrix_image.mueller_visualization import (
     visualize_rgb_mueller_rgbgrid,
 )
 
-# (옵션) 히스토그램 등 후처리 훅
 on_after_redraw = None
 
 
@@ -45,11 +44,11 @@ class MuellerVideoPlayer:
 
         # batch scheduling
         self._scheduled_frames: set[int] = set()
-        self._batch_size: int = 400  # 넉넉히(덮어써져도 지속)
+        self._batch_size: int = 400
 
         # heartbeat (스케줄 끊김 자동 복구)
         self._hb_running: bool = False
-        self._hb_interval_frames: int = 15  # 15프레임마다(약 0.25s @60fps)
+        self._hb_interval_frames: int = 15
 
         # detect video changes
         self._last_video_id: int | None = None
@@ -74,11 +73,9 @@ class MuellerVideoPlayer:
         )
 
     def _get_video_source_array(self):
-        # 6D 원본이 있으면 그걸 우선 사용
         arr6 = getattr(common_state, "npy_video_data", None)
         if self._is_video_array(arr6):
             return arr6
-        # fallback: npy_data가 6D인 경우(옛 로더 호환)
         arr = getattr(common_state, "npy_data", None)
         if self._is_video_array(arr):
             return arr
@@ -101,11 +98,9 @@ class MuellerVideoPlayer:
         if arr6 is None:
             return False
 
-        # 새 비디오 감지(포인터 변경)
         vid_id = id(arr6)
         if self._last_video_id != vid_id:
             self._last_video_id = vid_id
-            # 새 비디오 들어오면 스케줄 상태 초기화
             self._scheduled_frames.clear()
             self._sched_running = False
             self.playing = False
@@ -190,14 +185,9 @@ class MuellerVideoPlayer:
         if not self.has_video():
             return
 
-        # 이미 마지막 프레임에서 멈춰있다면(원하면 여기서 0으로 리셋 가능)
-        # if self.t >= self.T - 1:
-        #     self.t = 0
-
         self.playing = True
         self._last_step_time = time.perf_counter()
 
-        # ✅ 재시작이 항상 먹히도록 예약/플래그 확실히 초기화
         self._sched_running = False
         self._scheduled_frames.clear()
 
@@ -208,11 +198,9 @@ class MuellerVideoPlayer:
         self.playing = False
         self._last_step_time = None
 
-        # ✅ pause 이후 play가 안 먹히는 문제 방지
         self._sched_running = False
         self._scheduled_frames.clear()
 
-        # heartbeat는 다음 hb에서 자연 종료
         self._hb_running = False
 
     def next_once(self) -> None:
@@ -256,7 +244,6 @@ class MuellerVideoPlayer:
             self.stop()
             return
 
-        # 예약 풀이 많이 줄었거나 끊긴 것 같으면 강제로 다시 채움
         if len(self._scheduled_frames) < (self._batch_size // 2):
             self._schedule_next_step(force=True)
 
@@ -266,10 +253,6 @@ class MuellerVideoPlayer:
     # -------- scheduler (batch scheduling) --------
 
     def _frame_interval(self) -> int:
-        """
-        렌더 FPS 대비 원하는 비디오 FPS에 맞춰 몇 프레임마다 1번 step할지.
-        dpge의 +1 콜백과 충돌을 줄이기 위해 최소 4 프레임 간격 권장.
-        """
         fps = max(1.0, float(self.parsed_fps()))
         try:
             render_fps = float(dpg.get_frame_rate())
@@ -294,7 +277,7 @@ class MuellerVideoPlayer:
 
         interval = self._frame_interval()
         base = dpg.get_frame_count()
-        start = base + 2  # dpge가 +1을 쓸 가능성이 높으니 +2부터
+        start = base + 2
 
         need = self._batch_size - len(self._scheduled_frames)
         if need <= 0:
@@ -302,7 +285,6 @@ class MuellerVideoPlayer:
             return
 
         k = 1
-        # 충분히 멀리까지 분산 예약(덮어쓰기 일부 당해도 살아남게)
         while need > 0 and k <= self._batch_size * 20:
             f = start + k * interval
             if f not in self._scheduled_frames:
@@ -314,10 +296,6 @@ class MuellerVideoPlayer:
         self._sched_running = False
 
     def _advance_frame(self, step: int) -> None:
-        """
-        끝까지 재생 후 자동 stop (루프 X).
-        루프로 원하면 아래 new_t 처리에서 % self.T 로 바꾸면 됨.
-        """
         new_t = self.t + step
 
         if new_t >= self.T:
@@ -330,7 +308,6 @@ class MuellerVideoPlayer:
         self.redraw_current_frame()
 
     def _step(self, sender=None, app_data=None, user_data=None) -> None:
-        # sender가 frame 번호로 들어오는 경우가 많으니 예약 set에서 제거
         try:
             frame_no = int(sender)
             self._scheduled_frames.discard(frame_no)
@@ -355,13 +332,11 @@ class MuellerVideoPlayer:
             last = now
 
         elapsed = now - last
-        step = max(1, int(elapsed / dt))  # 시간 기반 프레임 드랍 허용
+        step = max(1, int(elapsed / dt))
         self._last_step_time = last + step * dt
 
-        # 프레임 진행 + 렌더
         self._advance_frame(step)
 
-        # 아직 재생 중이면 배치 예약 보충
         if self.playing:
             self._schedule_next_step(force=True)
 
@@ -377,7 +352,6 @@ class MuellerVideoPlayer:
         self.t = 0
         self._last_video_id = id(arr)
 
-        # 새 비디오 붙였으니 스케줄 상태 초기화
         self.stop()
 
         mueller_state.is_video = True
@@ -468,7 +442,6 @@ def cb_slider(sender, app_data) -> None:
 
 def cb_fps(sender, app_data) -> None:
     player.fps_text = str(app_data or "").strip()
-    # 재생 중이면 다음 step부터 반영됨(즉시 반영 원하면 play를 다시 누르면 됨)
 
 def on_mode_or_channel_changed() -> None:
     if mueller_state.is_video and player.has_video():
