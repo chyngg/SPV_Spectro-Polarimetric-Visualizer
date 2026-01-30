@@ -77,6 +77,8 @@ def load_npy_and_display(file_path=None):
 
 		if dim == 6 and raw.shape[-3:] == (3, 4, 4): # Mueller-matrix video
 			common_state.current_tab = "Mueller_video"
+			dpg.configure_item("input_stokes_group", show=True)
+			dpg.configure_item("stokes_custom_group", show=False)
 			common_state.npy_data = raw
 			update_tools_tab_from_current_tab()
 			mueller_video.player.attach_frames(raw)
@@ -87,10 +89,10 @@ def load_npy_and_display(file_path=None):
 			dpg.configure_item("Mueller_rgb_negative", enabled=True)
 			dpg.configure_item("mueller_histogram", enabled=True)
 			dpg.configure_item("center_status_fileinfo", show=False)
+			dpg.configure_item("video_controls", show=True)
 
 			update_wavelength_options()
 			return
-
 
 		if dim >= 3:
 			missing_mask = np.isnan(raw) | (raw < -1e6) | (raw > 1e6)
@@ -99,10 +101,12 @@ def load_npy_and_display(file_path=None):
 			raw[missing_pixels, ...] = 0
 			common_state.npy_data = raw
 
-		if dim == 4 and raw.shape[2] == 4 and raw.shape[3] == 3: # SP_image - RGB
+		if dim == 4 and raw.shape[2] == 4 and raw.shape[3] == 3: # Trichromatic
 			common_state.current_tab = "Trichromatic"
 			update_tools_tab_from_current_tab()
 			dpg.configure_item("center_status_fileinfo", show=True)
+			dpg.configure_item("input_stokes_group", show=False)
+			dpg.configure_item("stokes_custom_group", show=False)
 			if not sp_state.visualizing_by_wavelength:
 				update_visualization(sp_state.sp_visualizing)
 			else:
@@ -112,6 +116,8 @@ def load_npy_and_display(file_path=None):
 			common_state.current_tab = "Hyperspectral"
 			update_tools_tab_from_current_tab()
 			dpg.configure_item("center_status_fileinfo", show=True)
+			dpg.configure_item("input_stokes_group", show=False)
+			dpg.configure_item("stokes_custom_group", show=False)
 			update_visualization("original_hyper")
 
 		elif dim == 5 and raw.shape[2:] == (3, 4, 4): # RGB Mueller image
@@ -124,6 +130,7 @@ def load_npy_and_display(file_path=None):
 			dpg.configure_item("Mueller_rgb_negative", enabled=True)
 			dpg.configure_item("mueller_histogram", enabled=True)
 			dpg.configure_item("center_status_fileinfo", show=True)
+			dpg.configure_item("input_stokes_group", show=True)
 			if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
 				visualize_rgb_mueller_grid(raw, channel="R", correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
 			else:
@@ -138,7 +145,6 @@ def load_npy_and_display(file_path=None):
 			print("Unsupported data format: ", raw.shape)
 			return
 
-		print(common_state.current_tab)
 		dpg.set_value("status_file_name", common_state.selected_file_name)
 		dpg.set_value("status_file_type", common_state.current_tab)
 		update_wavelength_options()

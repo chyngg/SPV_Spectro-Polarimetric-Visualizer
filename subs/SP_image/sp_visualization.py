@@ -9,16 +9,19 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.patches import Rectangle
 from .hsi_conversion import HSI2RGB
 from subs.themes import make_custom_seismic
+from subs.Mueller_matrix_image import mueller_video
 
 CANVAS_WIDTH = 760
 CANVAS_HEIGHT = 540
 MATPLOTLIB_DPI = 100
 
+visualizing_stokes = None
+
 matplotlib.use("Agg")
 matplotlib.rcParams["figure.dpi"] = MATPLOTLIB_DPI
 matplotlib.rcParams["figure.figsize"] = (
-    CANVAS_WIDTH / MATPLOTLIB_DPI,
-    CANVAS_HEIGHT / MATPLOTLIB_DPI,
+	CANVAS_WIDTH / MATPLOTLIB_DPI,
+	CANVAS_HEIGHT / MATPLOTLIB_DPI,
 )
 
 wavelengths = np.arange(450, 651, 10)
@@ -46,19 +49,26 @@ def check_range_valid(vmax, vmin, visualizing):
 	return True
 
 def update_visualization(option):
+	global visualizing_stokes
 	if common_state.npy_data is None:
 		return
 	common_state.selected_option = option
 	dpg.configure_item("polarimetric_options", enabled=False)
 	dpg.configure_item("wavelength_options", enabled=False)
 
-	if (option in visualization_functions) and common_state.current_tab != "Mueller_image":
+	if common_state.current_tab in ("Trichromatic", "Hyperspectral"):
+		visualizing_stokes = common_state.npy_data
+	else:
+		visualizing_stokes = get_output_stokes()
+
+	if option in visualization_functions:
 		sp_state.visualizing_by_wavelength = False
 		visualization_functions[option]()
 	else:
 		return
 
 def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
+	global visualizing_stokes
 	if common_state.npy_data is None:
 		return
 
@@ -71,19 +81,23 @@ def update_wavelengths_visualization(selected_wavelengths, selected_stokes):
 	sp_state.selected_option = selected_stokes
 	sp_state.selected_wavelength = selected_wavelengths
 
-	if common_state.current_tab == "Trichromatic":
+	if common_state.current_tab in ("Trichromatic", "Mueller_image", "Mueller_video"):
 		index = rgb_index
-
-	else: #Hyperspectral
+	else: # Hyperspectral
 		index = hyper_index
 
-	s0 = common_state.npy_data[:, :, 0, index[selected_wavelengths]]
-	s1 = common_state.npy_data[:, :, 1, index[selected_wavelengths]]
-	s2 = common_state.npy_data[:, :, 2, index[selected_wavelengths]]
-	s3 = common_state.npy_data[:, :, 3, index[selected_wavelengths]]
+	if common_state.current_tab in ("Trichromatic", "Hyperspectral"):
+		visualizing_stokes = common_state.npy_data
+	else:
+		visualizing_stokes = get_output_stokes()
+
+	s0 = visualizing_stokes[:, :, 0, index[selected_wavelengths]]
+	s1 = visualizing_stokes[:, :, 1, index[selected_wavelengths]]
+	s2 = visualizing_stokes[:, :, 2, index[selected_wavelengths]]
+	s3 = visualizing_stokes[:, :, 3, index[selected_wavelengths]]
 
 	if selected_stokes in ["s0", "s1", "s2", "s3"]:
-		selected_data = common_state.npy_data[:, :, stokes_index[selected_stokes], index[selected_wavelengths]]
+		selected_data = visualizing_stokes[:, :, stokes_index[selected_stokes], index[selected_wavelengths]]
 	elif selected_stokes in ["DoLP"]:
 		dolp = np.sqrt(s1 ** 2 + s2 ** 2) / s0
 		selected_data = dolp
@@ -197,24 +211,21 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		ax.axis("on")
 		ax.set_title(title)
 
-		if common_state.current_tab == "Mueller_image":
-			ax.axis("off")
-		else:
-			try:
-				tick_x = np.linspace(0, CANVAS_WIDTH, 5)
-				tick_y = np.linspace(0, CANVAS_HEIGHT, 5)
-				label_x = [f"{int(w * x / CANVAS_WIDTH)}" for x in tick_x]
-				label_y = [f"{int(h * (1 - y / CANVAS_HEIGHT))}" for y in tick_y]  # 아래가 0
+		try:
+			tick_x = np.linspace(0, CANVAS_WIDTH, 5)
+			tick_y = np.linspace(0, CANVAS_HEIGHT, 5)
+			label_x = [f"{int(w * x / CANVAS_WIDTH)}" for x in tick_x]
+			label_y = [f"{int(h * (1 - y / CANVAS_HEIGHT))}" for y in tick_y]  # 아래가 0
 
-				ax.set_xticks(tick_x)
-				ax.set_yticks(tick_y)
-				ax.set_xticklabels(label_x)
-				ax.set_yticklabels(label_y)
-				ax.tick_params(labelsize=8)
-				ax.set_xlabel("X", fontsize=10)
-				ax.set_ylabel("Y", fontsize=10)
-			except:
-				pass
+			ax.set_xticks(tick_x)
+			ax.set_yticks(tick_y)
+			ax.set_xticklabels(label_x)
+			ax.set_yticklabels(label_y)
+			ax.tick_params(labelsize=8)
+			ax.set_xlabel("X", fontsize=10)
+			ax.set_ylabel("Y", fontsize=10)
+		except:
+			pass
 
 		if not is_original:
 			cbar = fig.colorbar(img, ax=ax, orientation='vertical', fraction=0.05, pad=0.02)
@@ -239,22 +250,23 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		plt.close(fig)
 
 def visualize_original():
-	s0 = common_state.npy_data[:, :, 0, :]
+	global visualizing_stokes
+	s0 = visualizing_stokes[:, :, 0, :]
 	s0[s0 < 0] = 1e-6
 	original_image = s0 / np.max(s0)
 	return generate_texture(original_image, "Original Image (sRGB)", "gray", vmin=0, vmax=1, is_original=True)
 
 def visualize_hyper_rgb():
-	s0 = common_state.npy_data[:, :, 0, :]
+	s0 = visualizing_stokes[:, :, 0, :]
 	rgb_image = HSI2RGB(wavelengths, s0, d=65, threshold=0.02)
 	return generate_texture(rgb_image, "RGB Approximation from Hyperspectral", is_original=True)
 
 def visualize_s0():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "s0")
 	if common_state.npy_data.ndim == 4:
-		s0 = common_state.npy_data[:, :, 0, :]
+		s0 = visualizing_stokes[:, :, 0, :]
 	else:
-		s0 = common_state.npy_data
+		s0 = visualizing_stokes
 	s0[s0 < 0] = 1e-6
 	vmin_ = common_state.vmin if valid else 0
 	vmax_ = common_state.vmax if valid else np.max(s0)
@@ -262,7 +274,7 @@ def visualize_s0():
 
 def visualize_s1():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "s1")
-	s1 = common_state.npy_data[:, :, 1, :]
+	s1 = visualizing_stokes[:, :, 1, :]
 	s1_resized = cv2.resize(np.mean(s1 / (np.max(s1) + 1e-8), axis=2), (760, 540))
 	max_s1 = np.max(s1_resized)
 	common_state.temp_abs_vmax = max_s1
@@ -271,7 +283,7 @@ def visualize_s1():
 	return generate_texture(s1, "s1: Linear Polarization (0°/90°)", "seismic", vmin=vmin_, vmax=vmax_, normalize=False)
 
 def visualize_s2():
-	s2 = common_state.npy_data[:, :, 2, :]
+	s2 = visualizing_stokes[:, :, 2, :]
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "s2")
 	s2_resized = cv2.resize(np.mean(s2 / (np.max(s2) + 1e-8), axis=2), (760, 540))
 	max_s2 = np.max(s2_resized)
@@ -282,7 +294,7 @@ def visualize_s2():
 
 def visualize_s3():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "s3")
-	s3 = common_state.npy_data[:, :, 3, :]
+	s3 = visualizing_stokes[:, :, 3, :]
 	s3_resized = cv2.resize(np.mean(s3 / (np.max(s3) + 1e-8), axis=2), (760, 540))
 	max_s3 = np.max(s3_resized)
 	common_state.temp_abs_vmax = max_s3
@@ -292,9 +304,9 @@ def visualize_s3():
 
 def visualize_dolp():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "dolp")
-	s0 = common_state.npy_data[:, :, 0, :]
-	s1 = common_state.npy_data[:, :, 1, :]
-	s2 = common_state.npy_data[:, :, 2, :]
+	s0 = visualizing_stokes[:, :, 0, :]
+	s1 = visualizing_stokes[:, :, 1, :]
+	s2 = visualizing_stokes[:, :, 2, :]
 	s0[s0 <= 0] = 1e-6
 	dolp = np.sqrt(s1 ** 2 + s2 ** 2) / s0
 	vmin_ = common_state.vmin if valid else 0
@@ -303,8 +315,8 @@ def visualize_dolp():
 
 def visualize_aolp():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "aolp")
-	s2 = common_state.npy_data[:, :, 2, :]
-	s1 = common_state.npy_data[:, :, 1, :]
+	s1 = visualizing_stokes[:, :, 1, :]
+	s2 = visualizing_stokes[:, :, 2, :]
 	aolp = 0.5 * np.arctan2(s2, s1)
 	max_aolp = np.max(np.abs(aolp))
 	common_state.temp_abs_vmax = max_aolp
@@ -314,8 +326,8 @@ def visualize_aolp():
 
 def visualize_docp():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "docp")
-	s0 = common_state.npy_data[:, :, 0, :]
-	s3 = common_state.npy_data[:, :, 3, :]
+	s0 = visualizing_stokes[:, :, 0, :]
+	s3 = visualizing_stokes[:, :, 3, :]
 	s0[s0 < 0] = 1e-6
 	docp = np.abs(s3) / np.maximum(s0, 1e-6)
 	vmin_ = common_state.vmin if valid else 0
@@ -324,10 +336,10 @@ def visualize_docp():
 
 def visualize_cop():
 	valid = check_range_valid(common_state.vmax, common_state.vmin, "aolp")
-	s2 = common_state.npy_data[:, :, 2, :]
-	s1 = common_state.npy_data[:, :, 1, :]
-	s3 = common_state.npy_data[:, :, 3, :]
-	cop = 0.5 * np.arctan(s3 / np.sqrt(s1**2 + s2**2))
+	s1 = visualizing_stokes[:, :, 1, :]
+	s2 = visualizing_stokes[:, :, 2, :]
+	s3 = visualizing_stokes[:, :, 3, :]
+	cop = 0.5 * np.arctan2(s3, np.sqrt(s1**2 + s2**2))
 	max_cop = np.max(np.abs(cop))
 	common_state.temp_abs_vmax = max_cop
 	vmin_ = common_state.vmin if valid else -max_cop
@@ -336,42 +348,42 @@ def visualize_cop():
 	return generate_texture(cop, "CoP: Chirality of Polarization", custom_seismic, vmin=vmin_, vmax=vmax_)
 
 def visualize_unpolarized():
-	s0 = common_state.npy_data[:, :, 0, :]
-	s1 = common_state.npy_data[:, :, 1, :]
-	s2 = common_state.npy_data[:, :, 2, :]
-	s3 = common_state.npy_data[:, :, 3, :]
+	s0 = visualizing_stokes[:, :, 0, :]
+	s1 = visualizing_stokes[:, :, 1, :]
+	s2 = visualizing_stokes[:, :, 2, :]
+	s3 = visualizing_stokes[:, :, 3, :]
 	unpolarized = s0 - np.sqrt(s1 ** 2 + s2 ** 2 + s3 ** 2)
-	if common_state.current_tab == "Trichromatic":
+	if common_state.current_tab in ("Trichromatic", "Mueller_image", "Mueller_video"):
 		return generate_texture(unpolarized, "Unpolarized", is_original=True)
 	else:
 		unpolarized_hyper = HSI2RGB(wavelengths, unpolarized, d=65, threshold=0.02)
 		return generate_texture(unpolarized_hyper, "Unpolarized", is_original=True)
 
 def visualize_linear_polarized():
-	s2 = common_state.npy_data[:, :, 2, :]
-	s1 = common_state.npy_data[:, :, 1, :]
+	s2 = visualizing_stokes[:, :, 2, :]
+	s1 = visualizing_stokes[:, :, 1, :]
 	polarized = np.sqrt(s1 ** 2 + s2 ** 2)
-	if common_state.current_tab == "Trichromatic":
+	if common_state.current_tab in ("Trichromatic", "Mueller_image", "Mueller_video"):
 		return generate_texture(polarized, "Polarized (linear)", is_original=True)
 	else:
 		polarized_hyper = HSI2RGB(wavelengths, polarized, d=65, threshold=0.02)
 		return generate_texture(polarized_hyper, "Polarized (linear)", is_original=True)
 
 def visualize_circular_polarized():
-	s3 = common_state.npy_data[:, :, 3, :]
+	s3 = visualizing_stokes[:, :, 3, :]
 	polarized = np.sqrt(s3 ** 2)
-	if common_state.current_tab == "Trichromatic":
+	if common_state.current_tab in ("Trichromatic", "Mueller_image", "Mueller_video"):
 		return generate_texture(polarized, "Polarized (circular)", is_original=True)
 	else:
 		polarized_hyper = HSI2RGB(wavelengths, polarized, d=65, threshold=0.02)
 		return generate_texture(polarized_hyper, "Polarized (circular)", is_original=True)
 
 def visualize_total_polarized():
-	s2 = common_state.npy_data[:, :, 2, :]
-	s1 = common_state.npy_data[:, :, 1, :]
-	s3 = common_state.npy_data[:, :, 3, :]
+	s1 = visualizing_stokes[:, :, 1, :]
+	s2 = visualizing_stokes[:, :, 2, :]
+	s3 = visualizing_stokes[:, :, 3, :]
 	polarized = np.sqrt(s1 ** 2 + s2 ** 2 + s3 ** 2)
-	if common_state.current_tab == "Trichromatic":
+	if common_state.current_tab in ("Trichromatic", "Mueller_image", "Mueller_video"):
 		return generate_texture(polarized, "Polarized (total)", is_original=True)
 	else:
 		polarized_hyper = HSI2RGB(wavelengths, polarized, d=65, threshold=0.02)
@@ -394,3 +406,36 @@ visualization_functions = {
 	"Polarized (total)" : visualize_total_polarized
 }
 
+def get_mueller_input_stokes_vec():
+	d = common_state.mueller_input_stokes
+	return np.array([d["s0"], d["s1"], d["s2"], d["s3"]], dtype=np.float32)
+
+def get_output_stokes(): # Mueller-matrix (H, W, 3, 4, 4)
+	M = common_state.npy_data
+	if M is None:
+		return None
+
+	Sin = get_mueller_input_stokes_vec()
+
+	t = None
+	if isinstance(M, np.ndarray) and M.ndim == 6 and M.shape[-3:] == (3, 4, 4):
+		try:
+			t = int(mueller_video.player.t)
+		except Exception:
+			t = 0
+		M = M[t]
+
+	if not (isinstance(M, np.ndarray) and M.ndim == 5 and M.shape[2:] == (3, 4, 4)):
+		return None
+
+	key = (t, float(Sin[0]), float(Sin[1]), float(Sin[2]), float(Sin[3]), M.shape)
+
+	if getattr(common_state, "mueller_output_stokes", None) is None or \
+			getattr(common_state, "mueller_output_stokes_key", None) != key:
+		Sout_hw_c_4 = np.einsum("hwcij,j->hwci", M, Sin)  # (H,W,3,4)
+		Sout_hw_4_c = np.transpose(Sout_hw_c_4, (0, 1, 3, 2))  # (H,W,4,3)
+
+		common_state.mueller_output_stokes = Sout_hw_4_c
+		common_state.mueller_output_stokes_key = key
+
+	return common_state.mueller_output_stokes

@@ -20,3 +20,4 @@ now_polarized = "total"
 graph_options = ["s0", "s1", "s2", "s3", "DoLP", "AoLP", "DoCP", "CoP"]
 
 sp_visualizing = "original"
+input_stokes = ["Unpolarized (1, 0, 0, 0)", "Horizontal (1, 1, 0, 0)", "Vertical (1, -1, 0, 0)", "Custom"]

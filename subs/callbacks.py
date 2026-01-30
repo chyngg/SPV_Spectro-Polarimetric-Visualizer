@@ -46,16 +46,40 @@ def set_sp_by_channel_callback():
 
 def change_polarized_option_callback(sender):
 	sp_state.now_polarized = dpg.get_value("select_polarized_option")
-	if sp_state.sp_visualizing in ["Polarized(Linear)", "Polarized(Circular)", "Polarized(total)"]:
-		sp_state.sp_visualizing = f"Polarized({sp_state.now_polarized})"
+	if sp_state.sp_visualizing in ("Polarized (linear)", "Polarized (circular)", "Polarized (total)"):
+		sp_state.sp_visualizing = f"Polarized ({sp_state.now_polarized})"
 		update_visualization(sp_state.sp_visualizing)
 
 def activate_visualization():
-	if common_state.current_tab == "Mueller_image":
-		return
 	dpg.configure_item("polarimetric_options", enabled=True)
 	dpg.configure_item("wavelength_options", enabled=True)
 	update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
+
+def select_input_stokes_callback():
+	selected_input_stokes = dpg.get_value("select_input_stokes_combo")
+	dpg.configure_item("stokes_custom_group", show=False)
+	if selected_input_stokes == "Unpolarized (1, 0, 0, 0)":
+		common_state.mueller_input_stokes = {"s0": 1.0, "s1": 0.0, "s2": 0.0, "s3": 0.0}
+	elif selected_input_stokes == "Horizontal (1, 1, 0, 0)":
+		common_state.mueller_input_stokes = {"s0": 1.0, "s1": 1.0, "s2": 0.0, "s3": 0.0}
+	elif selected_input_stokes == "Vertical (1, -1, 0, 0)":
+		common_state.mueller_input_stokes = {"s0": 1.0, "s1": -1.0, "s2": 0.0, "s3": 0.0}
+	else: #Custom
+		dpg.configure_item("stokes_custom_group", show=True)
+
+	if not sp_state.visualizing_by_wavelength:
+		update_visualization(sp_state.sp_visualizing)
+	else:
+		update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
+
+def apply_stokes_from_ui():
+	common_state.mueller_input_stokes["s0"] = dpg.get_value("stokes_s0")
+	common_state.mueller_input_stokes["s1"] = dpg.get_value("stokes_s1")
+	common_state.mueller_input_stokes["s2"] = dpg.get_value("stokes_s2")
+	common_state.mueller_input_stokes["s3"] = dpg.get_value("stokes_s3")
+
+	common_state.mueller_output_stokes = None
+	update_visualization(sp_state.sp_visualizing)
 
 def reload_visualization():
 	(common_state.vmin, common_state.vmax) = (common_state.input_vmin, common_state.input_vmax)
@@ -65,7 +89,7 @@ def reload_visualization():
 		update_visualization(common_state.selected_option)
 	elif common_state.current_tab == "Mueller_image": #Mueller_image
 		if common_state.vmin < common_state.vmax:
-			current_channel = common_state.wavelength_options[mueller_state.mueller_selected_channel]
+			current_channel = mueller_state.mueller_selected_channel
 			visualize_rgb_mueller_grid(common_state.npy_data, channel=current_channel, vmin=common_state.vmin, vmax=common_state.vmax)
 	else: # Mueller_video
 		mueller_video.on_mode_or_channel_changed()
@@ -367,8 +391,22 @@ def close_mueller_histogram(sender, app_data, user_data):
 	dpg.configure_item("mueller_histogram_update", enabled=False, show=False)
 	dpg.configure_item("mueller_histogram_close", enabled=False, show=False)
 
+def update_sp_if_mueller_video():
+	if common_state.current_tab != "Mueller_video":
+		return
+	if sp_state.visualizing_by_wavelength:
+		update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
+	else:
+		update_visualization(sp_state.sp_visualizing)
 
 try:
-	mueller_video.on_after_redraw = update_mueller_hist_if_open
+	old = mueller_video.on_after_redraw
+	def chained():
+		try:
+			if callable(old):
+				old()
+		finally:
+			update_sp_if_mueller_video()
+	mueller_video.on_after_redraw = chained
 except Exception as e:
 	print("[callbacks] failed to set mueller_video.on_after_redraw", e)

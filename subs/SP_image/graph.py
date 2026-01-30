@@ -2,6 +2,7 @@ from subs.SP_image import sp_state
 from subs import common_state
 from .sp_visualization import update_visualization
 from subs.callbacks import on_close_graph_window
+from subs.SP_image.sp_visualization import get_output_stokes
 import numpy as np
 import matplotlib.pyplot as plt
 import dearpygui.dearpygui as dpg
@@ -9,8 +10,12 @@ import os
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 def view_graph():
-	npy_data = common_state.npy_data
-	if npy_data is None:
+	if common_state.current_tab in ("Trichromatic", "Hyperspectral"):
+		visualizing_stokes = common_state.npy_data
+	else:
+		visualizing_stokes = get_output_stokes()
+
+	if visualizing_stokes is None:
 		return
 
 	try:
@@ -22,10 +27,10 @@ def view_graph():
 		y1, y2 = max(0, y1), min(height, y2)
 
 		fig, ax = plt.subplots()
-		s0_crop = npy_data[y1:y2, x1:x2, 0, :]  # s0
-		s1_crop = npy_data[y1:y2, x1:x2, 1, :]  # s0
-		s2_crop = npy_data[y1:y2, x1:x2, 2, :]  # s0
-		s3_crop = npy_data[y1:y2, x1:x2, 3, :]  # s0
+		s0_crop = visualizing_stokes[y1:y2, x1:x2, 0, :]  # s0
+		s1_crop = visualizing_stokes[y1:y2, x1:x2, 1, :]  # s0
+		s2_crop = visualizing_stokes[y1:y2, x1:x2, 2, :]  # s0
+		s3_crop = visualizing_stokes[y1:y2, x1:x2, 3, :]  # s0
 
 		s0_crop = normalize(s0_crop)
 		s1_crop = normalize(s1_crop)
@@ -47,11 +52,11 @@ def view_graph():
 			"CoP": cop_crop
 		}
 
-		if npy_data.ndim == 4 and npy_data.shape[2] == 4:
+		if visualizing_stokes.ndim == 4 and visualizing_stokes.shape[2] == 4:
 			selected_crop = data_map.get(sp_state.crop_graph_option)
 			mean_values = np.mean(selected_crop, axis=(0, 1))
 
-			band_count = npy_data.shape[3]
+			band_count = visualizing_stokes.shape[3]
 			if band_count == 21: # Hyperspectral
 				wavelengths = np.arange(450, 651, 10)  # Hyperspectral: 450~650nm
 				ax.set_xlabel("Wavelength (nm)")

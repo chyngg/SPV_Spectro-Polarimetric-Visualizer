@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import dearpygui.dearpygui as dpg
 import cv2
+from subs.SP_image.sp_visualization import get_output_stokes
 
 CANVAS_WIDTH = 760
 CANVAS_HEIGHT = 540
@@ -36,7 +37,6 @@ def fit_to_canvas_rgba(image_rgba: np.ndarray, canvas_w: int, canvas_h: int) -> 
 	canvas[y0:y0+new_h, x0:x0+new_w, :] = resized
 
 	return canvas
-
 
 def generate_histogram(data_list, labels, colors, title, xlabel, ylabel, bins=200, value_range=(-0.3, 0.3)):
 	fig, ax = plt.subplots()
@@ -77,9 +77,13 @@ def generate_histogram(data_list, labels, colors, title, xlabel, ylabel, bins=20
 
 def show_stokes_histogram(parameter, direction="X"):
 	sp_state.shown_histogram = parameter
-	npy_data = common_state.npy_data
-	if npy_data is None or common_state.current_tab == "Mueller_image":
+	if common_state.npy_data is None:
 		return
+	elif common_state.current_tab in ("Trichromatic", "Hyperspectral"):
+		npy_data = common_state.npy_data
+	else:
+		npy_data = get_output_stokes()
+
 
 	s0, s1, s2, s3 = npy_data[:, :, :, 0].transpose(2, 0, 1)
 
@@ -93,16 +97,15 @@ def show_stokes_histogram(parameter, direction="X"):
 		data_list = [data_flattened[:, i] for i in range(data_flattened.shape[1])]
 		generate_histogram(data_list, stokes_labels, colors, title="Stokes Distribution", xlabel="Value", ylabel="Number of Pixels")
 
-
 	if parameter == 2: # Gradient distribution of Stokes vector
 		stokes_labels = ["$s_0$", "$s_1$", "$s_2$", "$s_3$"]
 		colors = ['blue', 'orange', 'green', 'red']
 		gradients_x = []
 		gradients_y = []
 		for i in range(4):  # s0, s1, s2, s3
-			grad_x, grad_y = np.gradient(npy_data[:, :, i, 0])  # Gradient of the first channel
-			gradients_x.append(grad_x.flatten())  # Flatten the X-direction gradient
-			gradients_y.append(grad_y.flatten())  # Flatten the Y-direction gradient
+			dy, dx = np.gradient(npy_data[:, :, i, 0])  # (dy, dx)
+			gradients_x.append(dx.flatten())
+			gradients_y.append(dy.flatten())
 
 		if direction == "X":
 			generate_histogram(gradients_x, stokes_labels, colors, title="Gradient Distributions of Stokes Vector(X direction)", xlabel="Gradient (X direction)", ylabel="Log Probability", value_range=(-3, 3))
@@ -127,9 +130,9 @@ def show_stokes_histogram(parameter, direction="X"):
 
 		# Compute gradients for Stokes derivatives
 		for stokes_parameter in normalized_stokes:  # s1', s2', s3'
-			grad_x, grad_y = np.gradient(stokes_parameter)  # Gradient of the first channel
-			gradients_x.append(grad_x.flatten())  # Flatten the X-direction gradient
-			gradients_y.append(grad_y.flatten())  # Flatten the Y-direction gradient
+			dy, dx = np.gradient(stokes_parameter)
+			gradients_x.append(dx.flatten())
+			gradients_y.append(dy.flatten())
 
 		if direction == "X":
 			generate_histogram(gradients_x, stokes_labels, colors, title="Gradient derivatives distributions of Stokes vector (X direction)", xlabel="Gradient (X direction)", ylabel="Log Probability", value_range=(-3, 3))
@@ -155,10 +158,11 @@ def show_stokes_histogram(parameter, direction="X"):
 		gradients = []
 		labels = []
 		for label, feature in features.items():
+			dy, dx = np.gradient(feature)
 			if direction == "X":
-				grad, _ = np.gradient(feature)
-			else: # direction Y
-				_, grad = np.gradient(feature)
+				grad = dx
+			else:
+				grad = dy
 			gradients.append(grad.flatten())
 			labels.append(label)
 
