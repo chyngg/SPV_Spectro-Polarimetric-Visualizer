@@ -16,16 +16,6 @@ on_after_redraw = None
 
 
 class MuellerVideoPlayer:
-    """
-    재생 알고리즘(끊김 방지, dpge 레이아웃 충돌 회피):
-    - set_frame_callback이 덮어써지는 환경에서도 재생이 지속되도록 '배치 예약(batch scheduling)'을 사용
-    - 예약 풀이 고갈되어 _step 호출이 끊겨도 'heartbeat'가 주기적으로 감지/복구
-    - pause 누르기 전까지 계속 재생
-    - 기본 동작: 마지막 프레임까지 재생 후 자동으로 stop (루프 X)
-      (루프로 돌리고 싶으면 _advance_frame() 내부 주석 참고)
-    - 6D 원본 비디오는 common_state.npy_video_data에 보관,
-      현재 표시 프레임(5D)만 common_state.npy_data에 내려줌
-    """
 
     def __init__(self) -> None:
         self.frames: np.ndarray | None = None  # (T,H,W,3,4,4)
@@ -34,6 +24,8 @@ class MuellerVideoPlayer:
 
         self.playing: bool = False
         self.fps_text: str = "10"
+
+        self.display_mode: str = "mueller"  # "mueller" | "sp"
 
         # slider recursion guard
         self._ignore_slider_cb: bool = False
@@ -46,7 +38,7 @@ class MuellerVideoPlayer:
         self._scheduled_frames: set[int] = set()
         self._batch_size: int = 400
 
-        # heartbeat (스케줄 끊김 자동 복구)
+        # heartbeat
         self._hb_running: bool = False
         self._hb_interval_frames: int = 15
 
@@ -106,6 +98,7 @@ class MuellerVideoPlayer:
             self.playing = False
             self._last_step_time = None
             self._hb_running = False
+            self.display_mode = "mueller"
 
         self.frames = arr6
         self.T = int(arr6.shape[0])
@@ -150,23 +143,33 @@ class MuellerVideoPlayer:
         if not self.has_video():
             return
 
-        data5d = self.frames[self.t]  # (H,W,3,4,4)
-        common_state.npy_data = data5d
+        if self.display_mode == "sp":
+            common_state.npy_video_data = self.frames
+            common_state.npy_data = self.frames
 
-        if mueller_state.mueller_visualizing in ("Original", "m00", "Gamma"):
-            visualize_rgb_mueller_grid(
-                data5d,
-                channel=mueller_state.mueller_selected_channel,
-                correction=mueller_state.mueller_visualizing,
-                vmin=common_state.vmin,
-                vmax=common_state.vmax,
-            )
+            if hasattr(common_state, "mueller_output_stokes"):
+                common_state.mueller_output_stokes = None
+            if hasattr(common_state, "mueller_output_stokes_key"):
+                common_state.mueller_output_stokes_key = None
+
         else:
-            visualize_rgb_mueller_rgbgrid(
-                data5d,
-                correction=mueller_state.mueller_selected_correction,
-                sign=mueller_state.mueller_visualizing,
-            )
+            data5d = self.frames[self.t]  # (H,W,3,4,4)
+            common_state.npy_data = data5d
+
+            if mueller_state.mueller_visualizing in ("Original", "m00", "Gamma"):
+                visualize_rgb_mueller_grid(
+                    data5d,
+                    channel=mueller_state.mueller_selected_channel,
+                    correction=mueller_state.mueller_visualizing,
+                    vmin=common_state.vmin,
+                    vmax=common_state.vmax,
+                )
+            else:
+                visualize_rgb_mueller_rgbgrid(
+                    data5d,
+                    correction=mueller_state.mueller_selected_correction,
+                    sign=mueller_state.mueller_visualizing,
+                )
 
         if dpg.does_item_exist("mueller_video_frame_label"):
             dpg.set_value("mueller_video_frame_label", f"Frame: {self.t + 1}/{self.T}")
@@ -346,7 +349,7 @@ class MuellerVideoPlayer:
         if not self._is_video_array(arr):
             raise ValueError(f"Expected (T,H,W,3,4,4), got {getattr(arr, 'shape', None)}")
 
-        common_state.npy_video_data = arr  # 6D 원본 보관
+        common_state.npy_video_data = arr
         self.frames = arr
         self.T = int(arr.shape[0])
         self.t = 0
@@ -356,6 +359,8 @@ class MuellerVideoPlayer:
 
         mueller_state.is_video = True
         common_state.npy_data = arr[0]
+
+        self.display_mode = "mueller"
 
         # UI enable
         for tag in (
@@ -396,6 +401,8 @@ class MuellerVideoPlayer:
             common_state.npy_video_data = None
         except Exception:
             pass
+
+        self.display_mode = "mueller"
 
         for tag in (
             "mueller_video_play",

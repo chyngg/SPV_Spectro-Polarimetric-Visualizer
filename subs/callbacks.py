@@ -31,7 +31,10 @@ def show_histogram_callback(parameter):
 	show_stokes_histogram(parameter=parameter, direction=sp_state.selected_direction)
 
 def set_sp_option(sender):
-	if common_state.current_tab == "Trichromatic" and sender == "original":
+	if common_state.current_tab == "Mueller_video":
+		mueller_video.player.display_mode = "sp"
+		sp_state.sp_visualizing = sender
+	elif common_state.current_tab == "Trichromatic" and sender == "original":
 		sp_state.sp_visualizing = "original"
 	elif common_state.current_tab == "Hyperspectral" and sender == "original":
 		sp_state.sp_visualizing = "original_hyper"
@@ -40,6 +43,8 @@ def set_sp_option(sender):
 	update_visualization(sp_state.sp_visualizing)
 
 def set_sp_by_channel_callback():
+	if common_state.current_tab == "Mueller_video":
+		mueller_video.player.display_mode = "sp"
 	sp_state.selected_wavelength = dpg.get_value("wavelength_options")
 	sp_state.selected_stokes = dpg.get_value("polarimetric_options")
 	update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
@@ -51,11 +56,15 @@ def change_polarized_option_callback(sender):
 		update_visualization(sp_state.sp_visualizing)
 
 def activate_visualization():
+	if common_state.current_tab == "Mueller_video":
+		mueller_video.player.display_mode = "sp"
 	dpg.configure_item("polarimetric_options", enabled=True)
 	dpg.configure_item("wavelength_options", enabled=True)
 	update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
 
 def select_input_stokes_callback():
+	if common_state.current_tab == "Mueller_video":
+		mueller_video.player.display_mode = "sp"
 	selected_input_stokes = dpg.get_value("select_input_stokes_combo")
 	dpg.configure_item("stokes_custom_group", show=False)
 	if selected_input_stokes == "Unpolarized (1, 0, 0, 0)":
@@ -157,6 +166,8 @@ def on_vmin_change():
 # ---- For mueller-matrix visualization ----
 
 def mueller_select_option_callback():
+	if mueller_state.is_video:
+		mueller_video.player.display_mode = "mueller"
 	mueller_state.mueller_selected_correction = dpg.get_value("mueller_correction")
 
 	if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
@@ -182,6 +193,8 @@ def mueller_select_option_callback():
 		)
 
 def mueller_channel_callback():
+	if mueller_state.is_video:
+		mueller_video.player.display_mode = "mueller"
 	mueller_state.mueller_selected_channel = dpg.get_value("mueller_channel")
 	mueller_state.mueller_visualizing = mueller_state.mueller_selected_correction
 
@@ -191,6 +204,8 @@ def mueller_channel_callback():
 		mueller_select_option_callback()
 
 def mueller_rgb_callback_positive():
+	if mueller_state.is_video:
+		mueller_video.player.display_mode = "mueller"
 	mueller_state.mueller_visualizing = "Positive"
 	if mueller_state.is_video:
 		mueller_video.on_mode_or_channel_changed()
@@ -202,6 +217,8 @@ def mueller_rgb_callback_positive():
 		)
 
 def mueller_rgb_callback_negative():
+	if mueller_state.is_video:
+		mueller_video.player.display_mode = "mueller"
 	mueller_state.mueller_visualizing = "Negative"
 	if mueller_state.is_video:
 		mueller_video.on_mode_or_channel_changed()
@@ -213,6 +230,8 @@ def mueller_rgb_callback_negative():
 		)
 
 def on_gamma_change():
+	if mueller_state.is_video:
+		mueller_video.player.display_mode = "mueller"
 	mueller_state.gamma = float(dpg.get_value("gamma_input"))
 	if not mueller_state.visualizing_gamma:
 		return
@@ -393,6 +412,8 @@ def close_mueller_histogram(sender, app_data, user_data):
 
 def update_sp_if_mueller_video():
 	if common_state.current_tab != "Mueller_video":
+		return
+	if getattr(mueller_video.player, "display_mode", "mueller") != "sp":
 		return
 	if sp_state.visualizing_by_wavelength:
 		update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)

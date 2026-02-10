@@ -26,11 +26,11 @@ def view_graph():
 		x1, x2 = max(0, x1), min(width, x2)
 		y1, y2 = max(0, y1), min(height, y2)
 
-		fig, ax = plt.subplots()
-		s0_crop = visualizing_stokes[y1:y2, x1:x2, 0, :]  # s0
-		s1_crop = visualizing_stokes[y1:y2, x1:x2, 1, :]  # s0
-		s2_crop = visualizing_stokes[y1:y2, x1:x2, 2, :]  # s0
-		s3_crop = visualizing_stokes[y1:y2, x1:x2, 3, :]  # s0
+		fig, ax = plt.subplots(figsize=(6, 4), dpi=100)
+		s0_crop = visualizing_stokes[y1:y2, x1:x2, 0, :]
+		s1_crop = visualizing_stokes[y1:y2, x1:x2, 1, :]
+		s2_crop = visualizing_stokes[y1:y2, x1:x2, 2, :]
+		s3_crop = visualizing_stokes[y1:y2, x1:x2, 3, :]
 
 		s0_crop = normalize(s0_crop)
 		s1_crop = normalize(s1_crop)
@@ -87,7 +87,7 @@ def view_graph():
 				dpg.set_value("graph_texture", image_array.flatten())
 
 			if not dpg.does_item_exist("graph_window"):
-				with dpg.window(label="Graph Window", tag="graph_window", width=700, height=500, pos=(100, 100), on_close=on_close_graph_window):
+				with dpg.window(label="Graph Window", tag="graph_window", width=600, height=450, pos=(100, 100), on_close=on_close_graph_window):
 					dpg.add_image("graph_texture")
 			else:
 				dpg.configure_item("graph_window", show=True)

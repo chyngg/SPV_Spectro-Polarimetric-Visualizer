@@ -25,9 +25,9 @@ layout= ('\n'
 		 '	COL content 0.6\n'
 		 '		ROW 0.7\n'
 		 '			COL center_img 1 center center\n'
-		 '		ROW 0.05\n'
+		 '		ROW 0.1\n'
 		 '			COL center_status 1 center center\n'
-		 '		ROW 0.25\n'
+		 '		ROW 0.2\n'
 		 '			COL nodes_cat_A\n'
 		 '			COL nodes_cat_B\n'
 		 '	COL tools 0.2 center top\n')
@@ -143,48 +143,6 @@ with dpg.group(parent='tools', indent=5) as tools:
 				dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
 
 			dpg.add_separator()
-			with dpg.group(tag="video_controls", show=False):
-				dpg.add_text("Video controls:")
-				with dpg.group(horizontal=True):
-					dpg.add_button(
-						label="<<",
-						tag="mueller_video_prev",
-						width=30,
-						enabled=False,
-						callback=mueller_video.cb_prev,
-					)
-					dpg.add_button(
-						label="Play",
-						tag="mueller_video_play",
-						width=70,
-						enabled=False,
-						callback=mueller_video.cb_play,
-					)
-					dpg.add_button(
-						label="Pause",
-						tag="mueller_video_pause",
-						width=70,
-						enabled=False,
-						callback=mueller_video.cb_pause,
-					)
-					dpg.add_button(
-						label=">>",
-						tag="mueller_video_next",
-						width=30,
-						enabled=False,
-						callback=mueller_video.cb_next,
-					)
-
-				with dpg.group(horizontal=True):
-					dpg.add_text("FPS:")
-					dpg.add_input_int(
-						tag="mueller_video_fps",
-						default_value=10,
-						width=150,
-						enabled=False,
-						callback=mueller_video.cb_fps,
-					)
-				dpg.add_separator()
 
 			dpg.add_text("Mueller elements for histogram:")
 			with dpg.child_window(tag="mueller_hist_checkbox_area", height=120, autosize_x=True, border=True):
@@ -225,10 +183,11 @@ with dpg.group(parent='nodes_cat_A', indent=20) as ndo_cat_A:
 		dpg.add_input_text(tag="upper_right_y", callback=callbacks.on_upper_right_y, width=70)
 	dpg.add_separator()
 	with dpg.group(horizontal=True):
-		dpg.add_text("Select graph option:")
+		dpg.add_text("Graph option:")
 		dpg.add_combo(items=sp_state.graph_options, default_value="s0", tag="crop_graph_options",
-					  callback=callbacks.crop_graph_option_callback, width=252)
-	dpg.add_button(label="View Graph", callback=lambda: graph.view_graph(), width=400)
+					  callback=callbacks.crop_graph_option_callback, width=95)
+		dpg.add_spacing(width=5)
+		dpg.add_button(label="View Graph", callback=lambda: graph.view_graph(), width=180)
 
 # NODES CATEGORY B
 with dpg.group(parent='nodes_cat_B', indent=20) as ndo_cat_B:
@@ -277,10 +236,55 @@ with dpg.group(parent='center_status', tag="center_status_group", indent=4):
 		max_value=1,
 		default_value=0,
 		width=CANVAS_WIDTH,
+		height=10,
 		enabled=False,
 		show=False,
 		callback=mueller_video.cb_slider,
 	)
+
+	with dpg.group(tag="video_controls", show=False):
+		dpg.add_separator()
+		with dpg.group(horizontal=True):
+			dpg.add_spacer(width=180)
+			dpg.add_button(
+				label="<<",
+				tag="mueller_video_prev",
+				width=30,
+				enabled=False,
+				callback=mueller_video.cb_prev,
+			)
+			dpg.add_button(
+				label="Play",
+				tag="mueller_video_play",
+				width=70,
+				enabled=False,
+				callback=mueller_video.cb_play,
+			)
+			dpg.add_button(
+				label="Pause",
+				tag="mueller_video_pause",
+				width=70,
+				enabled=False,
+				callback=mueller_video.cb_pause,
+			)
+			dpg.add_button(
+				label=">>",
+				tag="mueller_video_next",
+				width=30,
+				enabled=False,
+				callback=mueller_video.cb_next,
+			)
+			dpg.add_spacing(width=10)
+			dpg.add_text("FPS:")
+			dpg.add_input_int(
+				tag="mueller_video_fps",
+				default_value=10,
+				width=150,
+				enabled=False,
+				callback=mueller_video.cb_fps,
+			)
+			dpg.add_spacer(width=180)
+
 	with dpg.group(horizontal=True, tag="center_status_fileinfo"):
 		dpg.add_text("File: ")
 		dpg.add_text("", tag="status_file_name")
