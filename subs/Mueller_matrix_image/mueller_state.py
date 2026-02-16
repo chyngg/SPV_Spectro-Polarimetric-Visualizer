@@ -1,4 +1,4 @@
-corrections = ["Original", "Gamma", "m00"]
+corrections = ["Original", "Gamma", "m00", "m00 (Keep Intensity)"]
 mueller_rgb_options = ["Positive", "Negative"]
 rgb_map = {"B": 0, "G": 1, "R": 2}
 mueller_selected_channel = "R"
@@ -9,3 +9,17 @@ mueller_visualizing = "Original" # ["Original", "Gamma", "m00", "Positive", "Neg
 visualizing_gamma = False
 
 is_video = False
+
+# --- Lu-Chipman View State ---
+visualization_mode = "Matrix"  # "Matrix" or "Decomposition"
+decomposition_options = [
+    "Depolarization Index",
+    "Diattenuation",
+    "Polarizance",
+    "Linear Retardance",
+    "Matrix: Diattenuator",
+    "Matrix: Retarder",
+    "Matrix: Depolarizer",
+    "Matrix: Corrected (M_Delta*M_R)"
+]
+selected_decomposition = "Depolarization Index"

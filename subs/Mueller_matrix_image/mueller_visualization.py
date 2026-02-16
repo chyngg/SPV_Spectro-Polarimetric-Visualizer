@@ -1,4 +1,4 @@
-from subs.Mueller_matrix_image import mueller_state
+from subs.Mueller_matrix_image import mueller_state, lu_chipman
 from subs import common_state
 import dearpygui.dearpygui as dpg
 import numpy as np
@@ -76,6 +76,15 @@ def _apply_mueller_correction(mat4x4: np.ndarray, mode: str = "Original", eps: f
 		denom = np.maximum(np.abs(m00), eps)
 		mueller_state.visualizing_gamma = False
 		return mat4x4 / denom[:, :, None, None]
+
+	elif mode == "m00 (Keep Intensity)":
+		m00_original = mat4x4[:, :, 0, 0].copy()
+		denom = np.maximum(np.abs(m00_original), eps)
+		normalized_mat = mat4x4 / denom[:, :, None, None]
+		normalized_mat[:, :, 0, 0] = m00_original
+
+		mueller_state.visualizing_gamma = False
+		return normalized_mat
 
 	else:
 		mueller_state.visualizing_gamma = False
@@ -168,3 +177,57 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 		dpg.set_value(texture_name, image_array.flatten())
 	finally:
 		plt.close(fig)
+
+
+def visualize_decomposition(data5d: np.ndarray, channel: str, param_name: str):
+	if data5d is None:
+		return
+
+	# 채널 선택 (R, G, B)
+	idx_map = {"B": 0, "G": 1, "R": 2}
+	ch_idx = idx_map.get(channel, 2)
+
+	# 해당 채널의 (H, W, 4, 4) 데이터 추출
+	mat4x4 = data5d[:, :, ch_idx, :, :]
+
+	# [CASE 1] 4x4 행렬 시각화 모드인 경우
+	if param_name.startswith("Matrix:"):
+		matrices = lu_chipman.get_decomposed_matrices(mat4x4)
+		target_matrix = matrices.get(param_name)
+
+		if target_matrix is None:
+			return
+
+		# (중요) 4x4 Grid 그리는 함수 재사용
+		# data5d 형식(3채널)을 맞춰줘야 함수를 쓸 수 있으므로 차원 확장
+		# 현재 단일 채널 결과이므로, R,G,B 모두 동일한 target_matrix를 넣어서 보냄
+		fake_data5d = np.zeros_like(data5d)
+		fake_data5d[:, :, 0, :, :] = target_matrix
+		fake_data5d[:, :, 1, :, :] = target_matrix
+		fake_data5d[:, :, 2, :, :] = target_matrix
+
+		# visualize_rgb_mueller_grid 호출 (channel은 아무거나 줘도 됨, 위에서 다 복사했으므로)
+		return visualize_rgb_mueller_grid(
+			fake_data5d,
+			channel="R",
+			correction=param_name.replace("Matrix: ", ""),  # 제목용
+			vmin=-1.0,
+			vmax=1.0
+		)
+
+	# [CASE 2] 기존 스칼라(히트맵) 시각화 모드
+	else:
+		params = lu_chipman.calculate_params(mat4x4)
+		image_data = params.get(param_name)
+
+		if image_data is None:
+			return
+
+		return generate_texture(
+			image_data=image_data,
+			title=f"Lu-Chipman: {param_name} ({channel})",
+			colormap="inferno",
+			vmin=0.0,
+			vmax=1.0,
+			normalize=False
+		)

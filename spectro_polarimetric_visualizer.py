@@ -124,43 +124,72 @@ with dpg.group(parent='tools', indent=5) as tools:
 
 		# Mueller-matrix image / video
 		with dpg.tab(label="MM-matrix", tag="tools_tab_mm"):
-			dpg.add_text('For Mueller-matrix image: ')
-			with dpg.group(horizontal=True):
-				dpg.add_text('Correction: ')
-				dpg.add_combo(items=mueller_state.corrections, default_value=mueller_state.corrections[0], tag="mueller_correction",
-							  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
-			with dpg.group(horizontal=True):
-				dpg.add_text('Gamma value: ')
-				dpg.add_input_double(tag='gamma_input', default_value=2.2, callback=callbacks.on_gamma_change, width=170)
-			dpg.add_separator()
-			with dpg.group(horizontal=True):
-				dpg.add_text('Channel: ')
-				dpg.add_combo(items=common_state.wavelength_options, default_value="R", tag="mueller_channel",
-							  callback=callbacks.mueller_channel_callback, enabled=False, width=-1)
-			dpg.add_text('Visualize as RGB: ')
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive, tag="Mueller_rgb_positive", enabled=False, width=135)
-				dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative, tag="Mueller_rgb_negative", enabled=False, width=135)
-
+			dpg.add_text('View Mode:')
+			dpg.add_radio_button(items=["Matrix", "Decomposition"], default_value="Matrix",
+								 horizontal=True, tag="mueller_view_mode_radio",
+								 callback=callbacks.mueller_mode_change_callback)
 			dpg.add_separator()
 
-			dpg.add_text("Mueller elements for histogram:")
-			with dpg.child_window(tag="mueller_hist_checkbox_area", height=120, autosize_x=True, border=True):
-				for i in range(4):
-					with dpg.group(horizontal=True):
-						for j in range(4):
-							label = f"m{i}{j}"
-							dpg.add_checkbox(
-								label=label,
-								tag=f"mueller_hist_cb_{label}",
-								default_value=(label == "m00"),
-								callback=callbacks.mueller_hist_checkbox_callback,
-							)
-			dpg.add_button(label="Histogram", callback=callbacks.mueller_histogram, tag="mueller_histogram",
-						   enabled=False, width=-1)
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="Update", callback=callbacks.mueller_histogram, tag="mueller_histogram_update", enabled=False, show=False, width=135)
-				dpg.add_button(label="Close", callback=callbacks.close_mueller_histogram, tag="mueller_histogram_close", enabled=False, show=False, width=135)
+			with dpg.group(tag="group_matrix_view", show=True):
+				dpg.add_text('For Mueller-matrix image: ')
+				with dpg.group(horizontal=True):
+					dpg.add_text('Correction: ')
+					dpg.add_combo(items=mueller_state.corrections, default_value=mueller_state.corrections[0],
+								  tag="mueller_correction",
+								  callback=callbacks.mueller_select_option_callback, enabled=False, width=-1)
+				with dpg.group(horizontal=True):
+					dpg.add_text('Gamma value: ')
+					dpg.add_input_double(tag='gamma_input', default_value=2.2, callback=callbacks.on_gamma_change,
+										 width=170)
+				dpg.add_separator()
+				with dpg.group(horizontal=True):
+					dpg.add_text('Channel: ')
+					dpg.add_combo(items=common_state.wavelength_options, default_value="R", tag="mueller_channel",
+								  callback=callbacks.mueller_channel_callback, enabled=False, width=-1)
+				dpg.add_text('Visualize as RGB: ')
+				with dpg.group(horizontal=True):
+					dpg.add_button(label="Positive", callback=callbacks.mueller_rgb_callback_positive,
+								   tag="Mueller_rgb_positive", enabled=False, width=135)
+					dpg.add_button(label="Negative", callback=callbacks.mueller_rgb_callback_negative,
+								   tag="Mueller_rgb_negative", enabled=False, width=135)
+
+				dpg.add_separator()
+
+				dpg.add_text("Mueller elements for histogram:")
+				with dpg.child_window(tag="mueller_hist_checkbox_area", height=120, autosize_x=True, border=True):
+					for i in range(4):
+						with dpg.group(horizontal=True):
+							for j in range(4):
+								label = f"m{i}{j}"
+								dpg.add_checkbox(
+									label=label,
+									tag=f"mueller_hist_cb_{label}",
+									default_value=(label == "m00"),
+									callback=callbacks.mueller_hist_checkbox_callback,
+								)
+				dpg.add_button(label="Histogram", callback=callbacks.mueller_histogram, tag="mueller_histogram",
+							   enabled=False, width=-1)
+				with dpg.group(horizontal=True):
+					dpg.add_button(label="Update", callback=callbacks.mueller_histogram,
+								   tag="mueller_histogram_update", enabled=False, show=False, width=135)
+					dpg.add_button(label="Close", callback=callbacks.close_mueller_histogram,
+								   tag="mueller_histogram_close", enabled=False, show=False, width=135)
+
+			with dpg.group(tag="group_decomposition_view", show=False):
+				dpg.add_text("Physical Parameter:")
+				dpg.add_combo(items=mueller_state.decomposition_options,
+							  default_value=mueller_state.selected_decomposition,
+							  tag="mueller_decomp_combo",
+							  callback=callbacks.mueller_decomposition_select_callback,
+							  width=-1)
+				dpg.add_spacer(height=5)
+
+				with dpg.group(horizontal=True):
+					dpg.add_text('Channel: ')
+					dpg.add_combo(items=common_state.wavelength_options, default_value="R",
+								  tag="mueller_decomp_channel",
+								  callback=callbacks.mueller_channel_callback, width=-1)
+
 
 dpg.bind_item_theme(tools, tools_theme)
 
@@ -300,4 +329,3 @@ common_state.recent_files = io_utils.get_recent_files(30)
 io_utils.update_history_checkboxes()
 dpg.start_dearpygui()
 dpg.destroy_context()
-
