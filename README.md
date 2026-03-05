@@ -1,15 +1,18 @@
+# README
+
 # SPV: Spectro-Polarimetric Visualizer
 
 [[Click here to download Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
 
 <p align="center">
-  <img src="/assets/readme/RGB_1.png" alt="RGB Image" width="45%" />
-  <img src="/assets/readme/Hyperspectral_1.png" alt="Hyperspectral Image" width="45%" />
+  <img src="assets/readme/Spectro-Polarimetric-image.png" alt="RGB Image" width="45%" />
+  <img src="assets/readme/Mueller-matrix-image.png" alt="Hyperspectral Image" width="45%" />
 </p>
 
-
 ## Installation & Running
-You must have at least _Python 3.10_ before running code below.
+
+You must have at least *Python 3.10* before running code below.
+
 ```bash
 git clone https://github.com/chyngg/SPV_Spectro-Polarimetric-Visualizer.git
 cd SPV_Spectro-Polarimetric-Visualizer
@@ -19,7 +22,8 @@ python spectro_polarimetric_visualizer.py
 
 ## Features
 
-### For Spectro-Polarimetric image:
+### Spectro-Polarimetric image:
+
 - Visualize for entire wavelengths:
     - Full Stokes parameters (`s0`, `s1`, `s2` , `s3`)
     - Polarization feature maps (`DoLP`, `AoLP`, `DoCP`, `CoP`)
@@ -37,22 +41,32 @@ python spectro_polarimetric_visualizer.py
     - Stokes parameters (`s0`, `s1`, `s2` , `s3`)
     - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - Graph plotting for multiple `.npy` files
-  - Stokes parameters (`s0`, `s1`, `s2` , `s3`)
-  - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
+    - Stokes parameters (`s0`, `s1`, `s2` , `s3`)
+    - Polarization features (`DoLP`, `AoLP`, `DoCP`, `CoP`)
 - Save the visualization as `.png`
 
 ### For Mueller-matrix image / video:
-- Visualize as 4x4 tiles
-- Original / Gamma Correction / m00 Correction for each channel
-- Positive / Negative values as RGB image + original / Gamma Correction / m00 Correction
-- For video visualization: The video format must be `.npy` file (T(frames), H, W, 3, 4, 4)
 
+- **View Mode**: Toggle between Matrix and Decomposition views.
+- **Matrix View Mode**:
+    - Visualize full 4x4 Mueller matrix tiles for each channel (R/G/B).
+    - Correction options: Original / Gamma Correction / m00 Normalization / m00 (Keep Intensity).
+    - Visualize Positive / Negative values as RGB images.
+    - Generate histograms for individual Mueller matrix elements ($m_{00}$ to $m_{33}$)
+    - Simulate Output Stokes vector *($S_{out}$) by applying predefined or custom Input Stokes vectors ($S_{in}$)*. The resulting $*S_{out}*$ supports interactive region-based graph plotting across channels, identical to standard spectro-polarimetric images.
+- **Decomposition View Mode (Lu-Chipman Decomposition)**:
+    - Extract and visualize physical parameters as 2D heatmaps:
+        - Depolarization Index, Diattenuation, Polarizance, Linear Retardance.
+        - Visualize decomposed components as 4x4 matrix grids:
+            - `Matrix: Diattenuator`, `Matrix: Retarder`, `Matrix: Depolarizer`, `Matrix Corrected`
+- For video visualization: The video format must be a `.npy` file of shape `(T(frames), H, W, 3, 4, 4)`
 
 ## About
 
 This project was created by Chaeyeong Lee.
-When using SPV in academic projects, please cite: 
-```ascii
+When using SPV in academic projects, please cite:
+
+```
 @software{SPV,
     title = {Spectro-Polarimetric Visualizer},
     author = {Chaeyeong LEE and Seunghwan BAEK},
