@@ -178,12 +178,10 @@ def generate_texture(image_data, title, colormap=None, vmin=None, vmax=None, is_
 	finally:
 		plt.close(fig)
 
-
 def visualize_decomposition(data5d: np.ndarray, channel: str, param_name: str):
 	if data5d is None:
 		return
 
-	# 채널 선택 (R, G, B)
 	idx_map = {"B": 0, "G": 1, "R": 2}
 	ch_idx = idx_map.get(channel, 2)
 
@@ -192,21 +190,25 @@ def visualize_decomposition(data5d: np.ndarray, channel: str, param_name: str):
 
 	# [CASE 1] 4x4 행렬 시각화 모드인 경우
 	if param_name.startswith("Matrix:"):
+		from subs.Mueller_matrix_image import mueller_video
+		is_playing = getattr(mueller_state, "is_video", False) and getattr(mueller_video.player, "playing", False)
+		if is_playing:
+			# 가로, 세로 픽셀을 4칸씩 건너뜀 (연산량 1/16로 감소)
+			mat4x4 = mat4x4[::4, ::4, :, :]
+		# --------------------------------------------------
+
 		matrices = lu_chipman.get_decomposed_matrices(mat4x4)
 		target_matrix = matrices.get(param_name)
 
 		if target_matrix is None:
 			return
 
-		# (중요) 4x4 Grid 그리는 함수 재사용
-		# data5d 형식(3채널)을 맞춰줘야 함수를 쓸 수 있으므로 차원 확장
-		# 현재 단일 채널 결과이므로, R,G,B 모두 동일한 target_matrix를 넣어서 보냄
-		fake_data5d = np.zeros_like(data5d)
+		# data5d 형식(3채널)을 맞춰주기 위해 차원 확장
+		fake_data5d = np.zeros((target_matrix.shape[0], target_matrix.shape[1], 3, 4, 4), dtype=target_matrix.dtype)
 		fake_data5d[:, :, 0, :, :] = target_matrix
 		fake_data5d[:, :, 1, :, :] = target_matrix
 		fake_data5d[:, :, 2, :, :] = target_matrix
 
-		# visualize_rgb_mueller_grid 호출 (channel은 아무거나 줘도 됨, 위에서 다 복사했으므로)
 		return visualize_rgb_mueller_grid(
 			fake_data5d,
 			channel="R",

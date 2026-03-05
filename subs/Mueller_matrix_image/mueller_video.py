@@ -10,13 +10,12 @@ from subs.Mueller_matrix_image import mueller_state
 from subs.Mueller_matrix_image.mueller_visualization import (
     visualize_rgb_mueller_grid,
     visualize_rgb_mueller_rgbgrid,
+    visualize_decomposition
 )
 
 on_after_redraw = None
 
-
 class MuellerVideoPlayer:
-
     def __init__(self) -> None:
         self.frames: np.ndarray | None = None  # (T,H,W,3,4,4)
         self.T: int = 0
@@ -138,7 +137,6 @@ class MuellerVideoPlayer:
         return self._ensure_video_attached()
 
     # -------- draw --------
-
     def redraw_current_frame(self) -> None:
         if not self.has_video():
             return
@@ -151,6 +149,16 @@ class MuellerVideoPlayer:
                 common_state.mueller_output_stokes = None
             if hasattr(common_state, "mueller_output_stokes_key"):
                 common_state.mueller_output_stokes_key = None
+
+        elif self.display_mode == "decomposition":
+            data5d = self.frames[self.t]
+            common_state.npy_data = data5d
+
+            visualize_decomposition(
+                data5d,
+                channel=mueller_state.mueller_selected_channel,
+                param_name=mueller_state.selected_decomposition
+            )
 
         else:
             data5d = self.frames[self.t]  # (H,W,3,4,4)
