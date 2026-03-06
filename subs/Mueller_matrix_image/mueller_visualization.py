@@ -72,16 +72,27 @@ def _apply_mueller_correction(mat4x4: np.ndarray, mode: str = "Original", eps: f
 		return (np.abs(mat4x4) ** (1 / mueller_state.gamma)) * np.sign(mat4x4)
 
 	elif mode == "m00":
-		m00 = mat4x4[:, :, 0, 0]
-		denom = np.maximum(np.abs(m00), eps)
+		m00 = mat4x4[..., 0, 0]
+		denom = m00[:, :, None, None]
+
+		valid_mask = denom > eps
+
+		normalized_mat = np.zeros_like(mat4x4)
+
+		np.divide(mat4x4, denom, out=normalized_mat, where=valid_mask)
+
 		mueller_state.visualizing_gamma = False
-		return mat4x4 / denom[:, :, None, None]
+		return normalized_mat
 
 	elif mode == "m00 (Keep Intensity)":
-		m00_original = mat4x4[:, :, 0, 0].copy()
-		denom = np.maximum(np.abs(m00_original), eps)
-		normalized_mat = mat4x4 / denom[:, :, None, None]
-		normalized_mat[:, :, 0, 0] = m00_original
+		m00 = mat4x4[..., 0, 0]
+		denom = m00[..., None, None]
+
+		valid_mask = denom > eps
+		normalized_mat = np.zeros_like(mat4x4)
+		np.divide(mat4x4, denom, out=normalized_mat, where=valid_mask)
+
+		normalized_mat[..., 0, 0] = m00
 
 		mueller_state.visualizing_gamma = False
 		return normalized_mat

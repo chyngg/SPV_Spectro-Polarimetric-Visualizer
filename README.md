@@ -5,8 +5,8 @@
 [[Click here to download Spectro-Polarimetric Data]](https://huggingface.co/datasets/jyj7913/spectro-polarimetric)
 
 <p align="center">
-  <img src="assets/readme/Spectro-Polarimetric-image.png" alt="RGB Image" width="45%" />
-  <img src="assets/readme/Mueller-matrix-image.png" alt="Hyperspectral Image" width="45%" />
+  <img src="assets/readme/Spectro-Polarimetric-image.png" alt="Spectro-Polarimetric Image" width="45%" />
+  <img src="assets/readme/Mueller-matrix-image.png" alt="Mueller-matrix Image" width="45%" />
 </p>
 
 ## Installation & Running

@@ -131,7 +131,7 @@ def load_npy_and_display(file_path=None):
 			dpg.configure_item("mueller_histogram", enabled=True)
 			dpg.configure_item("center_status_fileinfo", show=True)
 			dpg.configure_item("input_stokes_group", show=True)
-			if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma"]:
+			if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma", "m00 (Keep Intensity)"]:
 				visualize_rgb_mueller_grid(raw, channel="R", correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
 			else:
 				visualize_rgb_mueller_rgbgrid(raw, correction=mueller_state.mueller_selected_correction, sign=mueller_state.mueller_visualizing)
