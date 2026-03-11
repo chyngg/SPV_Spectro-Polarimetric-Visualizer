@@ -368,7 +368,10 @@ class MuellerVideoPlayer:
         mueller_state.is_video = True
         common_state.npy_data = arr[0]
 
-        self.display_mode = "mueller"
+        if mueller_state.visualization_mode == "Decomposition":
+            self.display_mode = "decomposition"
+        else:
+            self.display_mode = "mueller"
 
         # UI enable
         for tag in (

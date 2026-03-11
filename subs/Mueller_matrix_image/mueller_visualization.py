@@ -73,7 +73,7 @@ def _apply_mueller_correction(mat4x4: np.ndarray, mode: str = "Original", eps: f
 
 	elif mode == "m00":
 		m00 = mat4x4[..., 0, 0]
-		denom = m00[:, :, None, None]
+		denom = m00[..., None, None]
 
 		valid_mask = denom > eps
 

@@ -8,7 +8,7 @@ from subs import common_state
 from subs.Mueller_matrix_image import mueller_state, mueller_video
 from subs.SP_image import sp_state
 from subs.SP_image.sp_visualization import update_visualization, update_wavelengths_visualization
-from subs.Mueller_matrix_image.mueller_visualization import visualize_rgb_mueller_grid, visualize_rgb_mueller_rgbgrid
+from subs.Mueller_matrix_image.mueller_visualization import visualize_rgb_mueller_grid, visualize_rgb_mueller_rgbgrid, visualize_decomposition
 
 def open_import_dialog():
 	root = tk.Tk()
@@ -131,10 +131,16 @@ def load_npy_and_display(file_path=None):
 			dpg.configure_item("mueller_histogram", enabled=True)
 			dpg.configure_item("center_status_fileinfo", show=True)
 			dpg.configure_item("input_stokes_group", show=True)
-			if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma", "m00 (Keep Intensity)"]:
-				visualize_rgb_mueller_grid(raw, channel="R", correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
+			if mueller_state.visualization_mode == "Decomposition":
+				visualize_decomposition(raw, channel=mueller_state.mueller_selected_channel, param_name=mueller_state.selected_decomposition)
 			else:
-				visualize_rgb_mueller_rgbgrid(raw, correction=mueller_state.mueller_selected_correction, sign=mueller_state.mueller_visualizing)
+				if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma", "m00 (Keep Intensity)"]:
+					visualize_rgb_mueller_grid(raw, channel=mueller_state.mueller_selected_channel,
+											   correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
+				else:
+					visualize_rgb_mueller_rgbgrid(raw, correction=mueller_state.mueller_selected_correction,
+												  sign=mueller_state.mueller_visualizing)
+
 
 		elif dim == 2:
 			common_state.current_tab = "Trichromatic"

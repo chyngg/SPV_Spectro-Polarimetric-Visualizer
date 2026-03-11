@@ -72,6 +72,9 @@ def get_decomposed_matrices(mueller_matrix_image):
     M_D_inv[:, :, 0, 1:] = -D_vec
     M_D_inv[:, :, 1:, 0] = -D_vec
 
+    denom = np.maximum(1 - D_sq[:, :, :, None], eps)
+    M_D_inv = M_D_inv / denom
+
     M_prime = M @ M_D_inv
     m_prime_3x3 = M_prime[:, :, 1:, 1:]  # (H, W, 3, 3)
 
