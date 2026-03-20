@@ -103,7 +103,7 @@ def apply_stokes_from_ui():
 def reload_visualization():
     (common_state.vmin, common_state.vmax) = (common_state.input_vmin, common_state.input_vmax)
     if sp_state.visualizing_by_wavelength:
-        update_wavelengths_visualization(sp_state.selected_wavelength, common_state.selected_option)
+        update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
     elif common_state.current_tab != "Mueller_image" and common_state.current_tab != "Mueller_video":
         update_visualization(common_state.selected_option)
     elif common_state.current_tab == "Mueller_image":  # Mueller_image
@@ -127,11 +127,15 @@ def reset_visualization():
             (common_state.vmin, common_state.vmax) = (-1, 1)
             visualize_rgb_mueller_grid(common_state.npy_data, channel=current_channel, vmin=-1, vmax=1)
     else:
-        if common_state.selected_option == "s0" or common_state.selected_option == "DoLP" or common_state.selected_option == "DoCP":
+        if common_state.selected_option in ["s0", "DoLP", "DoCP"]:
             (common_state.vmin, common_state.vmax) = (0, 1)
         else:
             (common_state.vmin, common_state.vmax) = (-common_state.temp_abs_vmax, common_state.temp_abs_vmax)
-        update_visualization(common_state.selected_option)
+
+        if sp_state.visualizing_by_wavelength:
+            update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
+        else:
+            update_visualization(common_state.selected_option)
 
 
 def crop_graph_option_callback():
@@ -222,8 +226,12 @@ def mueller_select_option_callback():
 
 
 def mueller_channel_callback(sender, app_data):
-    # 채널 변경은 두 모드 모두에서 발생하므로 현재 모드에 따라 분기
     mueller_state.mueller_selected_channel = dpg.get_value(sender)
+
+    if dpg.does_item_exist("mueller_channel"):
+        dpg.set_value("mueller_channel", mueller_state.mueller_selected_channel)
+    if dpg.does_item_exist("mueller_decomp_channel"):
+        dpg.set_value("mueller_decomp_channel", mueller_state.mueller_selected_channel)
 
     if mueller_state.is_video:
         mueller_video.on_mode_or_channel_changed()
@@ -231,7 +239,6 @@ def mueller_channel_callback(sender, app_data):
         if mueller_state.visualization_mode == "Decomposition":
             update_decomposition_view()
         else:
-            # Matrix 모드라면 correction에 따라 다시 그림
             mueller_state.mueller_visualizing = mueller_state.mueller_selected_correction
             mueller_select_option_callback()
 
@@ -404,7 +411,7 @@ def render_mueller_histogram_to_texture(texture_tag: str):
         ch = getattr(mueller_state, "mueller_selected_channel", "R")
     elif npy.ndim == 5 and npy.shape[2:] == (3, 4, 4):
         ch = mueller_state.mueller_selected_channel  # "R","G","B"
-        ch_idx_map = {"B": 0, "G": 1, "R": 2}
+        ch_idx_map = {"R": 0, "G": 1, "B": 2}
         ch_idx = ch_idx_map.get(ch, 2)  # default R
         mats = npy[:, :, ch_idx, :, :]  # (H,W,4,4)
     elif npy.ndim == 6 and npy.shape[-3:] == (3, 4, 4):

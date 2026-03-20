@@ -50,6 +50,11 @@ def get_decomposed_matrices(mueller_matrix_image):
     D_sq = np.sum(D_vec ** 2, axis=2, keepdims=True)  # (H, W, 1)
     D_val = np.sqrt(D_sq)
 
+    invalid_mask = D_sq > (1.0 - eps)
+    scale = np.sqrt((1.0 - eps) / np.maximum(D_sq, eps))
+    D_vec = np.where(invalid_mask, D_vec * scale, D_vec)
+    D_sq = np.where(invalid_mask, 1.0 - eps, D_sq)
+
     a = np.sqrt(np.maximum(1 - D_sq, 0))
 
     M_D = np.zeros_like(M)

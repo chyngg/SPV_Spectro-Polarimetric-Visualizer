@@ -29,23 +29,13 @@ wavelengths = np.arange(450, 651, 10)
 def check_valid_by_wavelength(visualizing):
 	if common_state.vmax <= common_state.vmin:
 		return False
-
-	elif (visualizing in ["s0", "dolp", "docp", "Polarized (linear)", "Polarized (circular)", "Polarized (total)"]
-		  and (common_state.vmin < 0 or common_state.vmax > 1)):
-		return False
-
 	return True
 
 def check_range_valid(vmax, vmin, visualizing):
 	if vmax <= vmin:
 		return False
-
 	elif visualizing in ["original", "original_hyper", "polarized_linear", "polarized_circular", "polarized_total"]:
 		return False
-
-	elif visualizing in ["s0", "DoLP", "DoCP"] and vmin < 0:
-		return False
-
 	return True
 
 def update_visualization(option):

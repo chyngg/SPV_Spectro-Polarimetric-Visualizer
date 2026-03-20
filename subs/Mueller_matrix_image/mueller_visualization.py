@@ -27,7 +27,7 @@ def _stitch_mueller_4x4_rgb(rgb_4x4: np.ndarray) -> np.ndarray:
 	return big_rgb
 
 def visualize_rgb_mueller_grid(data5d: np.ndarray, channel: str="R", correction : str="Original", vmin: float = -1.0, vmax: float = 1.0):
-	channel_num = ("B", "G", "R").index(channel)
+	channel_num = ("R", "G", "B").index(channel)
 	mueller_state.mueller_visualize_rgb = False
 	tiles = data5d[:, :, channel_num, :, :]  # (H, W, 4, 4)
 	tiles = _apply_mueller_correction(tiles, mode=correction)
@@ -193,7 +193,7 @@ def visualize_decomposition(data5d: np.ndarray, channel: str, param_name: str):
 	if data5d is None:
 		return
 
-	idx_map = {"B": 0, "G": 1, "R": 2}
+	idx_map = {"R": 0, "G": 1, "B": 2}
 	ch_idx = idx_map.get(channel, 2)
 
 	# 해당 채널의 (H, W, 4, 4) 데이터 추출
@@ -222,7 +222,7 @@ def visualize_decomposition(data5d: np.ndarray, channel: str, param_name: str):
 
 		return visualize_rgb_mueller_grid(
 			fake_data5d,
-			channel="R",
+			channel=channel,
 			correction=param_name.replace("Matrix: ", ""),  # 제목용
 			vmin=-1.0,
 			vmax=1.0
@@ -236,11 +236,13 @@ def visualize_decomposition(data5d: np.ndarray, channel: str, param_name: str):
 		if image_data is None:
 			return
 
+		custom_vmax = np.pi if "Retardance" in param_name else 1.0
+
 		return generate_texture(
 			image_data=image_data,
 			title=f"Lu-Chipman: {param_name} ({channel})",
 			colormap="inferno",
 			vmin=0.0,
-			vmax=1.0,
+			vmax=custom_vmax,
 			normalize=False
 		)
