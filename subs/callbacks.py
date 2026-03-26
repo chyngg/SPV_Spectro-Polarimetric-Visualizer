@@ -214,8 +214,7 @@ def mueller_select_option_callback():
             common_state.npy_data,
             channel=mueller_state.mueller_selected_channel,
             correction=mueller_state.mueller_selected_correction,
-            vmin=-1,
-            vmax=1,
+            vmin=common_state.vmin, vmax=common_state.vmax,
         )
     else:
         visualize_rgb_mueller_rgbgrid(
@@ -292,8 +291,8 @@ def on_gamma_change():
                 common_state.npy_data,
                 channel=mueller_state.mueller_selected_channel,
                 correction=mueller_state.mueller_selected_correction,
-                vmin=-1,
-                vmax=1,
+                vmin=common_state.vmin,
+                vmax=common_state.vmax,
             )
 
 
@@ -517,6 +516,23 @@ def update_sp_if_mueller_video():
         update_wavelengths_visualization(sp_state.selected_wavelength, sp_state.selected_stokes)
     else:
         update_visualization(sp_state.sp_visualizing)
+
+
+def toggle_channel_order(sender, app_data):
+    if common_state.npy_data is None:
+        return
+
+    dim = common_state.npy_data.ndim
+
+    # 데이터 타입별 채널 축(Axis) 뒤집기
+    if dim == 4 and common_state.npy_data.shape[3] == 3:  # Trichromatic
+        common_state.npy_data = common_state.npy_data[:, :, :, ::-1]
+    elif dim == 5 and common_state.npy_data.shape[2] == 3:  # Mueller Image
+        common_state.npy_data = common_state.npy_data[:, :, ::-1, :, :]
+    elif dim == 6 and common_state.npy_data.shape[3] == 3:  # Mueller Video
+        common_state.npy_data = common_state.npy_data[:, :, :, ::-1, :, :]
+
+    reload_visualization()
 
 
 try:

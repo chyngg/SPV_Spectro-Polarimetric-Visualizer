@@ -43,7 +43,7 @@ status_theme = themes.setup_status_themes()
 # LEFT MENU
 with dpg.group(parent='left_menu', indent=5) as left_menu:
 	dpg.add_text('MENU:')
-	dpg.add_button(label="Upload .npy File", callback=io_utils.open_import_dialog, tag="upload_file_button", width=-1)
+	dpg.add_button(label="Upload .npy/.npz File", callback=io_utils.open_import_dialog, tag="upload_file_button", width=-1)
 	dpg.add_button(label="Export image", callback=io_utils.open_export_dialog, tag="export_image_button", width=-1)
 
 	dpg.add_spacer(height=40)
@@ -319,6 +319,9 @@ with dpg.group(parent='center_status', tag="center_status_group", indent=4):
 		dpg.add_text("", tag="status_file_name")
 		dpg.add_text(" |   Type: ")
 		dpg.add_text("", tag="status_file_type")
+		dpg.add_text(" |   Channel Order: ")
+		dpg.add_radio_button(items=["RGB", "BGR"], default_value="RGB", horizontal=True,
+							 tag="channel_order_radio", callback=callbacks.toggle_channel_order)
 
 dpg.create_viewport(title='Spectro-polarimetric Visualizer')
 dpg.set_primary_window('main_window', True)

@@ -15,16 +15,62 @@ def open_import_dialog():
 	root.withdraw()
 
 	file_path = filedialog.askopenfilename(
-		title = "Select a .npy file",
-		filetypes = [("NumPy Array files", "*.npy")]
+		title = "Select a file",
+		filetypes = [("NumPy files", "*.npy *.npz")]
 	)
 
 	if not file_path:
 		return
 
-	add_file_to_history(file_path)
-	common_state.selected_file_name = os.path.basename(file_path)
-	load_npy_with_history(file_path)
+	if file_path.endswith('.npz'):
+		open_npz_selection_dialog(file_path)
+	else:
+		add_file_to_history(file_path)
+		common_state.selected_file_name = os.path.basename(file_path)
+		load_npy_with_history(file_path)
+
+def open_npz_selection_dialog(file_path):
+	try:
+		npz_file = np.load(file_path, mmap_mode='r')
+		keys = npz_file.files
+	except Exception as e:
+		print(f"Error loading npz: {e}")
+		return
+
+	if not keys:
+		return
+
+	if len(keys) == 1:
+		_load_npz_key(file_path, keys[0])
+		return
+
+	if dpg.does_item_exist("npz_select_window"):
+		dpg.delete_item("npz_select_window")
+
+	with dpg.window(label="Select Array from NPZ", tag="npz_select_window", modal=True, show=True, width=350, height=150):
+		dpg.add_text(f"File: {os.path.basename(file_path)}")
+		dpg.add_combo(items=keys, default_value=keys[0], tag="npz_combo_selection", width=-1)
+		dpg.add_spacer(height=10)
+
+		def on_select():
+			selected_key = dpg.get_value("npz_combo_selection")
+			dpg.delete_item("npz_select_window")
+			_load_npz_key(file_path, selected_key)
+
+		with dpg.group(horizontal=True):
+			dpg.add_button(label="Load", callback=on_select, width=160)
+			dpg.add_button(label="Cancel", callback=lambda: dpg.delete_item("npz_select_window"), width=160)
+
+
+def _load_npz_key(file_path, selected_key):
+	history_path = f"{file_path}::{selected_key}"
+	add_file_to_history(history_path)
+	common_state.recent_files = [fp for fp in common_state.recent_files if fp != history_path]
+	common_state.recent_files.insert(0, history_path)
+	common_state.recent_files = get_recent_files(30)
+	update_history_checkboxes()
+
+	load_npy_and_display(file_path, selected_key)
 
 def file_selected_callback(sender, app_data):
 	if not app_data or 'file_path_name' not in app_data:
@@ -60,23 +106,31 @@ def export_image_callback(app_data):
 	if common_state.last_figure:
 		common_state.last_figure.savefig(save_path, dpi=300, bbox_inches='tight')
 
-def load_npy_and_display(file_path=None):
+def load_npy_and_display(file_path=None, npz_key=None):
 	if not file_path:
 		return
 
 	try:
 		mueller_video.player.detach_frames()
+		if dpg.does_item_exist("video_controls"):
+			dpg.configure_item("video_controls", show=False)
 	except Exception:
 		pass
 
 	try:
-		raw = np.load(file_path)
-		common_state.npy_data = raw
+		if npz_key:
+			npz_data = np.load(file_path, mmap_mode='r')
+			raw = npz_data[npz_key]
+			common_state.selected_file_name = f"{os.path.basename(file_path)} [{npz_key}]"
+		else:
+			raw = np.load(file_path, mmap_mode='r')
+			common_state.selected_file_name = os.path.basename(file_path)
+
 		dim = raw.ndim
-		common_state.selected_file_name = os.path.basename(file_path)
 
 		if dim == 6 and raw.shape[-3:] == (3, 4, 4): # Mueller-matrix video
 			common_state.current_tab = "Mueller_video"
+			(common_state.vmin, common_state.vmax) = (-1, 1)
 			dpg.configure_item("input_stokes_group", show=True)
 			dpg.configure_item("stokes_custom_group", show=False)
 			common_state.npy_data = raw
@@ -91,8 +145,15 @@ def load_npy_and_display(file_path=None):
 			dpg.configure_item("center_status_fileinfo", show=False)
 			dpg.configure_item("video_controls", show=True)
 
+			if dpg.does_item_exist("channel_order_radio"):
+				dpg.set_value("channel_order_radio", "RGB")
+
 			update_wavelength_options()
 			return
+
+		# 비디오가 아니면 수정 가능하도록 메모리에 카피
+		raw = np.array(raw)
+		common_state.npy_data = raw
 
 		if dim >= 3:
 			missing_mask = np.isnan(raw) | (raw < -1e6) | (raw > 1e6)
@@ -136,11 +197,11 @@ def load_npy_and_display(file_path=None):
 			else:
 				if mueller_state.mueller_visualizing in ["Original", "m00", "Gamma", "m00 (Keep Intensity)"]:
 					visualize_rgb_mueller_grid(raw, channel=mueller_state.mueller_selected_channel,
-											   correction=mueller_state.mueller_visualizing, vmin=-1, vmax=1)
+											   correction=mueller_state.mueller_visualizing,
+											   vmin=common_state.vmin, vmax=common_state.vmax)
 				else:
 					visualize_rgb_mueller_rgbgrid(raw, correction=mueller_state.mueller_selected_correction,
 												  sign=mueller_state.mueller_visualizing)
-
 
 		elif dim == 2:
 			common_state.current_tab = "Trichromatic"
@@ -153,6 +214,8 @@ def load_npy_and_display(file_path=None):
 
 		dpg.set_value("status_file_name", common_state.selected_file_name)
 		dpg.set_value("status_file_type", common_state.current_tab)
+		if dpg.does_item_exist("channel_order_radio"):
+			dpg.set_value("channel_order_radio", "RGB")
 		update_wavelength_options()
 
 	except Exception as e:
@@ -173,6 +236,15 @@ def load_npy_with_history(file_path):
 	if not file_path:
 		return
 
+	if "::" in file_path:
+		path, key = file_path.split("::")
+		_load_npz_key(path, key)
+		return
+
+	if file_path.endswith('.npz'):
+		open_npz_selection_dialog(file_path)
+		return
+
 	common_state.recent_files = [fp for fp in common_state.recent_files if fp != file_path]
 	common_state.recent_files.insert(0, file_path)
 	common_state.recent_files = get_recent_files(30)
@@ -181,7 +253,7 @@ def load_npy_with_history(file_path):
 
 def update_history_checkboxes():
 	dpg.delete_item("checkbox_area", children_only=True)
-
+	common_state.checked_files.clear()
 	for specific_file_path in common_state.recent_files:
 		filename = os.path.basename(specific_file_path)
 		dpg.add_checkbox(
@@ -193,7 +265,12 @@ def update_history_checkboxes():
 def load_file_callback():
 	if len(common_state.checked_files) != 1:
 		return
-	load_npy_and_display(common_state.checked_files[0])
+	file_path = common_state.checked_files[0]
+	if "::" in file_path:
+		path, key = file_path.split("::")
+		load_npy_and_display(path, key)
+	else:
+		load_npy_and_display(file_path)
 
 def make_checkbox_callback(file_path):
 	return lambda s, a: checkbox_callback(s, a, file_path)
@@ -206,21 +283,32 @@ def checkbox_callback(sender, app_data, file_path):
 		if file_path in common_state.checked_files:
 			common_state.checked_files.remove(file_path)
 
+
 def add_file_to_history(file_path):
 	conn = sqlite3.connect("history.db")
 	c = conn.cursor()
-	arr = np.load(file_path, mmap_mode="r")
-	if int(arr.shape[-1]) == 3:
-		data_type = "Trichromatic"
-	else:
-		data_type = "Hyperspectral"
 
-	c.execute("""
-				INSERT OR REPLACE INTO file_history (path, data_type, timestamp) 
-				VALUES (?, ?, CURRENT_TIMESTAMP)
-			""", (file_path, data_type))
-	conn.commit()
-	conn.close()
+	actual_path = file_path.split("::")[0]
+	npz_key = file_path.split("::")[1] if "::" in file_path else None
+
+	try:
+		if npz_key:
+			npz_file = np.load(actual_path, mmap_mode="r")
+			arr = npz_file[npz_key]
+		else:
+			arr = np.load(actual_path, mmap_mode="r")
+
+		data_type = "Trichromatic" if int(arr.shape[-1]) == 3 else "Hyperspectral"
+
+		c.execute("""
+					INSERT OR REPLACE INTO file_history (path, data_type, timestamp) 
+					VALUES (?, ?, CURRENT_TIMESTAMP)
+				""", (file_path, data_type))
+		conn.commit()
+	except Exception as e:
+		print(f"Failed to add history: {e}")
+	finally:
+		conn.close()
 
 def get_recent_files(limit=40):
 	conn = sqlite3.connect("history.db")
