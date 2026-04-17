@@ -34,7 +34,9 @@ def open_npz_selection_dialog(file_path):
 		npz_file = np.load(file_path, mmap_mode='r')
 		keys = npz_file.files
 	except Exception as e:
-		print(f"Error loading npz: {e}")
+		error_msg = f"File: {file_path}\nReason: {str(e)}"
+		print(f"ERROR: {error_msg}")
+		show_error_popup("Data Loading Error", error_msg)
 		return
 
 	if not keys:
@@ -114,8 +116,10 @@ def load_npy_and_display(file_path=None, npz_key=None):
 		mueller_video.player.detach_frames()
 		if dpg.does_item_exist("video_controls"):
 			dpg.configure_item("video_controls", show=False)
-	except Exception:
-		pass
+	except Exception as e:
+		error_msg = f"File: {file_path}\nReason: {str(e)}"
+		print(f"ERROR: {error_msg}")
+		show_error_popup("Data Loading Error", error_msg)
 
 	try:
 		if npz_key:
@@ -219,7 +223,8 @@ def load_npy_and_display(file_path=None, npz_key=None):
 		update_wavelength_options()
 
 	except Exception as e:
-		print(f"Unexpected error: {e}")
+		print(f"UNEXPECTED ERROR: str({e})")
+		show_error_popup("Unexpected Error", str(e))
 
 def update_wavelength_options():
 	if common_state.current_tab == "Hyperspectral":
@@ -307,6 +312,7 @@ def add_file_to_history(file_path):
 		conn.commit()
 	except Exception as e:
 		print(f"Failed to add history: {e}")
+		show_error_popup("Error", str(e))
 	finally:
 		conn.close()
 
@@ -326,5 +332,18 @@ def update_tools_tab_from_current_tab():
 			dpg.set_value("tools_tab_bar", "tools_tab_mm")
 		else:
 			dpg.set_value("tools_tab_bar", "tools_tab_sp")
-	except Exception:
-		pass
+	except Exception as e:
+		print(f"ERROR: str({e})")
+		show_error_popup("Data Loading Error", str(e))
+
+def show_error_popup(title, message):
+	if dpg.does_item_exist("error_window"):
+		dpg.delete_item("error_window")
+
+	with dpg.window(label=title, modal=True, tag="error_window", no_title_bar=False, autosize=True):
+		dpg.add_text(f"Error occurred: \n\n{message}", color=[255, 100, 100])
+		dpg.add_separator()
+		with dpg.group(horizontal=True):
+			dpg.add_button(label="OK", width=75, callback=lambda: dpg.delete_item("error_window"))
+			dpg.add_button(label="Copy to Clipboard", width=150,
+						   callback=lambda: dpg.set_clipboard_text(message))

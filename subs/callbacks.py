@@ -2,6 +2,7 @@ from subs.SP_image import sp_state
 from subs.Mueller_matrix_image import mueller_state, mueller_video
 from subs import common_state
 import dearpygui.dearpygui as dpg
+from subs.io_utils import show_error_popup
 from subs.SP_image.sp_visualization import update_visualization, update_wavelengths_visualization
 from subs.Mueller_matrix_image.mueller_visualization import visualize_rgb_mueller_grid, visualize_rgb_mueller_rgbgrid, \
     visualize_decomposition
@@ -120,7 +121,6 @@ def reload_visualization():
 def reset_visualization():
     if common_state.current_tab == "Mueller_image":
         if mueller_state.visualization_mode == "Decomposition":
-            # 분해 모드는 vmin/vmax 리셋이 고정값이므로 단순 갱신
             update_decomposition_view()
         else:
             current_channel = common_state.wavelength_options[mueller_state.mueller_selected_channel]
@@ -154,28 +154,32 @@ def on_close_graph_window():
 def on_lower_left_x():
     try:
         sp_state.lower_left_x = float(dpg.get_value("lower_left_x"))
-    except ValueError:
+    except ValueError as e:
+        show_error_popup("Value Error", str(e))
         return
 
 
 def on_lower_left_y():
     try:
         sp_state.lower_left_y = float(dpg.get_value("lower_left_y"))
-    except ValueError:
+    except ValueError as e:
+        show_error_popup("Value Error", str(e))
         return
 
 
 def on_upper_right_x():
     try:
         sp_state.upper_right_x = float(dpg.get_value("upper_right_x"))
-    except ValueError:
+    except ValueError as e:
+        show_error_popup("Value Error", str(e))
         return
 
 
 def on_upper_right_y():
     try:
         sp_state.upper_right_y = float(dpg.get_value("upper_right_y"))
-    except ValueError:
+    except ValueError as e:
+        show_error_popup("Value Error", str(e))
         return
 
 
@@ -183,7 +187,8 @@ def on_vmax_change():
     try:
         vmax_ = float(dpg.get_value("vmax_input"))
         common_state.input_vmax = vmax_
-    except ValueError:
+    except ValueError as e:
+        show_error_popup("Value Error", str(e))
         common_state.vmax = 0
 
 
@@ -191,7 +196,8 @@ def on_vmin_change():
     try:
         vmin_ = float(dpg.get_value("vmin_input"))
         common_state.input_vmin = vmin_
-    except ValueError:
+    except ValueError as e:
+        show_error_popup("Value Error", str(e))
         common_state.vmin = 0
 
 
@@ -296,7 +302,7 @@ def on_gamma_change():
             )
 
 
-# ---- [NEW] Lu-Chipman Callbacks ----
+# ---- Lu-Chipman Callbacks ----
 
 def mueller_mode_change_callback(sender, app_data):
     """ Matrix 모드 <-> Decomposition 모드 전환 """
@@ -416,8 +422,9 @@ def render_mueller_histogram_to_texture(texture_tag: str):
     elif npy.ndim == 6 and npy.shape[-3:] == (3, 4, 4):
         try:
             t = int(mueller_video.player.t)
-        except Exception:
-            t = 0
+        except Exception as e:
+            print("Rendering Error", str(e))
+            show_error_popup("Rendering Error", str(e))
         frame = npy[t]  # (H,W,3,4,4)
 
         ch = mueller_state.mueller_selected_channel
@@ -550,3 +557,4 @@ try:
     mueller_video.on_after_redraw = chained
 except Exception as e:
     print("[callbacks] failed to set mueller_video.on_after_redraw", e)
+    show_error_popup("Error", str(e))
